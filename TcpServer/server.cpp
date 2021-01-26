@@ -3,16 +3,49 @@
 #include <WinSock2.h>
 #include <iostream>
 
-
 //#pragma comment(lib,"ws2_32.lib")
 const short PORT = 8888;
 const int BACKLOG = 4;
+
+enum CMD
+{
+    CMD_LOGIN,
+    CMD_LOGOUT,
+    CMD_ERROR
+};
+//DataHead
+struct DataHeader
+{
+    short dataLength;
+    short cmd;
+};
+//DataPackage
+struct Login 
+{
+    char userName[32];
+    char passWord[32];
+};
+
+struct LoginResult
+{
+    int result;
+};
+
+struct Logout
+{
+    char userName[32];
+};
+
+struct LogoutResult
+{
+    int result;
+};
+
 int main()
 {
-    WORD ver = MAKEWORD(1, 0); //版本号
+    WORD ver = MAKEWORD(1, 2); //版本号
     WSADATA dat;
     WSAStartup(ver, &dat);
-    //一个简易TCP服务器
     //1.新建一个socket
     SOCKET s_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (s_sock == INVALID_SOCKET) {
@@ -46,27 +79,48 @@ int main()
     char welcome[] = "Hello, This is server.\n";
     char r[16] = {};
     char s[1024] = { };
-    while (true) {
-        c_sock = accept(s_sock, (sockaddr*)&clientAddr, &addrLen);
-        if (c_sock == INVALID_SOCKET) {
-            std::cerr << "invalid socket recived." << std::endl;
-        }
-        else {
-            std::cout << "new client join: IP = " << inet_ntoa(clientAddr.sin_addr) << std::endl;
-            send(c_sock, welcome, strlen(welcome) + 1, 0);
 
-            if (0 < recv(c_sock, r, 16, 0)) {
-                if (0 == strcmp(r, "exit"))
-                    closesocket(c_sock);
-                else if (0 == strcmp(r, "name")) {
-                    strncpy(s, "My name is server.",20);
-                    s[19] = '\0';
-                    send(c_sock, s, strlen(s)+1, 0);
-                }
-                else {
-                    send(c_sock, "????", 5, 0);
-                }
-            }
+    c_sock = accept(s_sock, (sockaddr*)&clientAddr, &addrLen);
+    if (c_sock == INVALID_SOCKET) {
+        std::cerr << "invalid socket recived." << std::endl;
+    }
+    else {
+        std::cout << "new client join: IP = " << inet_ntoa(clientAddr.sin_addr) <<"\t socket = " <<clientAddr.sin_port<< std::endl;
+        send(c_sock, welcome, strlen(welcome) + 1, 0);
+    }
+    
+    while (true) {
+        DataHeader header{};
+        if (recv(c_sock, (char *)&header,sizeof(DataHeader), 0) < 0) {
+            std::cout << "client has quited." << std::endl;
+            closesocket(c_sock);
+            break;
+          }
+        std::cout << "command receive:" << header.cmd << "\tdata length:" << header.dataLength << std::endl;
+        switch (header.cmd) {
+        case CMD_LOGIN:
+        {
+            Login login{};
+            recv(c_sock, (char*)&login, sizeof(Login), 0);
+            //判断用户名和密码
+            LoginResult ret{};
+            DataHeader dh = { sizeof(LoginResult),CMD_LOGIN };
+            send(c_sock, (const char*)&dh, sizeof(DataHeader), 0);
+            send(c_sock, (const char*)&ret, sizeof(LoginResult), 0);
+        } break;
+        case CMD_LOGOUT:
+        {
+            Logout logout{};
+            recv(c_sock, (char*)&logout, sizeof(logout), 0);
+            LogoutResult ret{};
+            DataHeader dh = { 0,CMD_LOGOUT };
+            send(c_sock, (const char*)&dh, sizeof(DataHeader), 0);
+            send(c_sock, (const char*)&ret, sizeof(LogoutResult), 0);
+        } break;
+        default:
+            header.cmd = CMD_ERROR;
+            header.dataLength = 0;
+            send(c_sock, (const char*)&header, sizeof(DataHeader), 0);
         }
     }
     //6.关闭套接字

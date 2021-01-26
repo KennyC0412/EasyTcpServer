@@ -2,14 +2,47 @@
 #include <Windows.h>
 #include <WinSock2.h>
 #include <iostream>
-
 //#pragma comment(lib,"ws2_32.lib")
 const short PORT = 8888;
 const int BACKLOG = 4;
 
+enum CMD
+{
+	CMD_LOGIN,
+	CMD_LOGOUT,
+	CMD_ERROR
+};
+//DataHead
+struct DataHeader
+{
+	short dataLength;
+	short cmd;
+};
+//DataPackage
+struct Login
+{
+	char userName[32];
+	char passWord[32];
+};
+
+struct LoginResult
+{
+	int result;
+};
+
+struct Logout
+{
+	char userName[32];
+};
+
+struct LogoutResult
+{
+	int result;
+};
+
 int main()
 {
-	WORD ver = MAKEWORD(1, 1);
+	WORD ver = MAKEWORD(1, 2);
 	WSADATA dat;
 	WSAStartup(ver, &dat);
 	//简易TCP客户端
@@ -34,17 +67,41 @@ int main()
 			std::cout << buffer;
 	}
 	while (true) {
-		char s[16] = { };
-		char r[1024] = { };
-		std::cin >> s;
-		if (0 == strcmp(s, "exit")) {
-			send(c_sock, s, strlen(s) + 1, 0);
+		//输入命令请求
+		char cmdBuf[128] = {};
+		std::cin >> cmdBuf;
+		if (0 == strcmp(cmdBuf, "exit")) {
+			std::cout << "receive exit command, program quit." << std::endl;
 			break;
-		} else {
-			send(c_sock, s, strlen(s) + 1, 0);
-			if (0 < recv(c_sock, r, 1024, 0)) {
-				std::cout << r << std::endl;
-			}
+		}
+		else if (0 == strcmp(cmdBuf, "login")) {
+			Login login = { "KennyC0412","123456" };
+			DataHeader dh = { sizeof(login),CMD_LOGIN };
+			//发送命令
+			send(c_sock, (const char*)&dh, sizeof(DataHeader), 0);
+			send(c_sock, (const char*)&login, sizeof(Login), 0);
+			//接收服务器返回数据
+			DataHeader rdh{};
+			LoginResult loginRet{};
+			recv(c_sock, (char*)&rdh, sizeof(DataHeader), 0);
+			recv(c_sock, (char*)&loginRet, sizeof(LoginResult), 0);
+			std::cout << "Login result: " << loginRet.result << std::endl;
+		}
+		else if (0 == strcmp(cmdBuf, "logout")) {
+			Logout logout{ "KennyC0412" };
+			DataHeader dh = { sizeof(Logout),CMD_LOGOUT };
+			//发送命令
+			send(c_sock, (const char*)&dh, sizeof(DataHeader), 0);
+			send(c_sock, (const char*)&logout, sizeof(logout), 0);
+			//接收服务器返回数据
+			DataHeader rdh{};
+			LogoutResult logoutRet{};
+			recv(c_sock, (char*)&rdh, sizeof(DataHeader), 0);
+			recv(c_sock, (char*)&logoutRet, sizeof(LogoutResult), 0);
+			std::cout << "Logout result: " << logoutRet.result << std::endl;
+		}
+		else {
+			std::cout << "unknown command,please input again: ";
 		}
 	}
 
