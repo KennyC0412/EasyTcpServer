@@ -9,16 +9,16 @@ const int BACKLOG = 4;
 
 int main()
 {
-	WORD ver = MAKEWORD(1, 0);
+	WORD ver = MAKEWORD(1, 1);
 	WSADATA dat;
 	WSAStartup(ver, &dat);
 	//简易TCP客户端
-	//1.新建一个socket
+	//新建一个socket
 	SOCKET c_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (c_sock == INVALID_SOCKET) {
 		std::cerr << "failed to create socket." << std::endl;
 	}
-	//2.连接服务器
+	//连接服务器
 	sockaddr_in _sin;
 	memset(&_sin, 0, sizeof(_sin));
 	_sin.sin_family = AF_INET;
@@ -29,15 +29,29 @@ int main()
 	}
 	else {
 		std::cout << "successed to connect." << std::endl;
+		char buffer[1024] = { };
+		if(0 < recv(c_sock, buffer, 1024, 0))
+			std::cout << buffer;
 	}
-		//3.接受服务器信息recv
-	char buffer[1024] = {};
-	if (recv(c_sock, buffer, 1024, 0) > 0) {
-		std::cout << buffer << std::endl;
+	while (true) {
+		char s[16] = { };
+		char r[1024] = { };
+		std::cin >> s;
+		if (0 == strcmp(s, "exit")) {
+			send(c_sock, s, strlen(s) + 1, 0);
+			break;
+		} else {
+			send(c_sock, s, strlen(s) + 1, 0);
+			if (0 < recv(c_sock, r, 1024, 0)) {
+				std::cout << r << std::endl;
+			}
+		}
 	}
-	//4.关闭closesocket
+
+	//关闭closesocket
 	closesocket(c_sock);
+	std::cout << "Connect closed." << std::endl;
 	WSACleanup();
-	getchar();
+	Sleep(1000);
 	return 0;
 }
