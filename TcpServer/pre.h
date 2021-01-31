@@ -61,4 +61,3 @@ struct LogoutResult : public DataHeader
 
 const char welcome[] = "Hello, This is server.\n";
 
-std::vector<SOCKET> g_clients;
