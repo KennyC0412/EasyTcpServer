@@ -2,14 +2,16 @@
 #include <Windows.h>
 #include <WinSock2.h>
 #include <iostream>
-//#pragma comment(lib,"ws2_32.lib")
+#pragma comment(lib,"ws2_32.lib")
 const short PORT = 8888;
 const int BACKLOG = 4;
 
 enum CMD
 {
 	CMD_LOGIN,
+	CMD_LOGIN_RESULT,
 	CMD_LOGOUT,
+	CMD_LOGOUT_RESULT,
 	CMD_ERROR
 };
 //DataHead
@@ -19,24 +21,42 @@ struct DataHeader
 	short cmd;
 };
 //DataPackage
-struct Login
+struct Login:public DataHeader
 {
+	Login() {
+		dataLength = sizeof(Login);
+		cmd = CMD_LOGIN;
+	}
 	char userName[32];
 	char passWord[32];
 };
 
-struct LoginResult
+struct LoginResult:public DataHeader
 {
+	LoginResult() {
+		dataLength = sizeof(LoginResult);
+		cmd = CMD_LOGIN_RESULT;
+		result = 0;
+	}
 	int result;
 };
 
-struct Logout
+struct Logout:public DataHeader
 {
+	Logout() {
+		dataLength = sizeof(Logout);
+		cmd = CMD_LOGOUT;
+	}
 	char userName[32];
 };
 
-struct LogoutResult
+struct LogoutResult:public DataHeader
 {
+	LogoutResult() {
+		dataLength = sizeof(LogoutResult);
+		cmd = CMD_LOGOUT_RESULT;
+		result = 0;
+	}
 	int result;
 };
 
@@ -50,6 +70,7 @@ int main()
 	SOCKET c_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (c_sock == INVALID_SOCKET) {
 		std::cerr << "failed to create socket." << std::endl;
+		exit(0);
 	}
 	//连接服务器
 	sockaddr_in _sin;
@@ -66,6 +87,7 @@ int main()
 		if(0 < recv(c_sock, buffer, 1024, 0))
 			std::cout << buffer;
 	}
+
 	while (true) {
 		//输入命令请求
 		char cmdBuf[128] = {};
@@ -75,28 +97,23 @@ int main()
 			break;
 		}
 		else if (0 == strcmp(cmdBuf, "login")) {
-			Login login = { "KennyC0412","123456" };
-			DataHeader dh = { sizeof(login),CMD_LOGIN };
+			Login login;
+			strcpy(login.userName, "Kenny");
+			strcpy(login.passWord, "123456");
 			//发送命令
-			send(c_sock, (const char*)&dh, sizeof(DataHeader), 0);
-			send(c_sock, (const char*)&login, sizeof(Login), 0);
+			send(c_sock, (const char*)&login, sizeof(login), 0);
 			//接收服务器返回数据
-			DataHeader rdh{};
 			LoginResult loginRet{};
-			recv(c_sock, (char*)&rdh, sizeof(DataHeader), 0);
 			recv(c_sock, (char*)&loginRet, sizeof(LoginResult), 0);
 			std::cout << "Login result: " << loginRet.result << std::endl;
 		}
 		else if (0 == strcmp(cmdBuf, "logout")) {
-			Logout logout{ "KennyC0412" };
-			DataHeader dh = { sizeof(Logout),CMD_LOGOUT };
+			Logout logout;
+			strcpy(logout.userName, "Kenny");
 			//发送命令
-			send(c_sock, (const char*)&dh, sizeof(DataHeader), 0);
 			send(c_sock, (const char*)&logout, sizeof(logout), 0);
 			//接收服务器返回数据
-			DataHeader rdh{};
 			LogoutResult logoutRet{};
-			recv(c_sock, (char*)&rdh, sizeof(DataHeader), 0);
 			recv(c_sock, (char*)&logoutRet, sizeof(LogoutResult), 0);
 			std::cout << "Logout result: " << logoutRet.result << std::endl;
 		}

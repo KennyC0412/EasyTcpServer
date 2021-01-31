@@ -3,14 +3,16 @@
 #include <WinSock2.h>
 #include <iostream>
 
-//#pragma comment(lib,"ws2_32.lib")
+#pragma comment(lib,"ws2_32.lib")
 const short PORT = 8888;
 const int BACKLOG = 4;
 
 enum CMD
 {
     CMD_LOGIN,
+    CMD_LOGIN_RESULT,
     CMD_LOGOUT,
+    CMD_LOGOUT_RESULT,
     CMD_ERROR
 };
 //DataHead
@@ -20,24 +22,43 @@ struct DataHeader
     short cmd;
 };
 //DataPackage
-struct Login 
+struct Login : public DataHeader
 {
+    Login() {
+        dataLength = sizeof(Login);
+        cmd = CMD_LOGIN;
+    }
     char userName[32];
     char passWord[32];
 };
 
-struct LoginResult
+struct LoginResult: public DataHeader
 {
+    LoginResult() {
+        dataLength = sizeof(LoginResult);
+        cmd = CMD_LOGIN_RESULT;
+        result = 0;
+    }
     int result;
 };
 
-struct Logout
+struct Logout : public DataHeader
 {
+    Logout() {
+        dataLength = sizeof(Logout);
+        cmd = CMD_LOGOUT;
+    }
     char userName[32];
 };
 
-struct LogoutResult
+struct LogoutResult : public DataHeader
 {
+    LogoutResult() {
+        dataLength = sizeof(LogoutResult);
+        cmd = CMD_LOGOUT_RESULT;
+        result = 0;
+
+    }
     int result;
 };
 
@@ -74,12 +95,7 @@ int main()
     sockaddr_in clientAddr;
     SOCKET c_sock = INVALID_SOCKET;
     int addrLen = sizeof(clientAddr);
-   
-    //5.send向客户端发送数据
-    char welcome[] = "Hello, This is server.\n";
-    char r[16] = {};
-    char s[1024] = { };
-
+       char welcome[] = "Hello, This is server.\n";
     c_sock = accept(s_sock, (sockaddr*)&clientAddr, &addrLen);
     if (c_sock == INVALID_SOCKET) {
         std::cerr << "invalid socket recived." << std::endl;
@@ -88,33 +104,33 @@ int main()
         std::cout << "new client join: IP = " << inet_ntoa(clientAddr.sin_addr) <<"\t socket = " <<clientAddr.sin_port<< std::endl;
         send(c_sock, welcome, strlen(welcome) + 1, 0);
     }
-    
+
+    //5.向客户端发送及接受数据
+    DataHeader header{};
     while (true) {
-        DataHeader header{};
-        if (recv(c_sock, (char *)&header,sizeof(DataHeader), 0) < 0) {
+        if (recv(c_sock, (char *)&header,sizeof(DataHeader), 0) <= 0) {
             std::cout << "client has quited." << std::endl;
             closesocket(c_sock);
             break;
           }
-        std::cout << "command receive:" << header.cmd << "\tdata length:" << header.dataLength << std::endl;
         switch (header.cmd) {
         case CMD_LOGIN:
         {
-            Login login{};
-            recv(c_sock, (char*)&login, sizeof(Login), 0);
+            Login login;
+            recv(c_sock, (char*)&login+sizeof(DataHeader), sizeof(login)-sizeof(DataHeader), 0);//DataHeader已被接受，需要偏移DataHeader长度来接受剩余数据
+            std::cout << "receive:CMD_LOGIN"  << "\tdata length:" << login.dataLength <<  
+            "\tuserName :" << login.userName <<"\tpassword:" << login.passWord << std::endl;
             //判断用户名和密码
-            LoginResult ret{};
-            DataHeader dh = { sizeof(LoginResult),CMD_LOGIN };
-            send(c_sock, (const char*)&dh, sizeof(DataHeader), 0);
+            LoginResult ret;
             send(c_sock, (const char*)&ret, sizeof(LoginResult), 0);
         } break;
         case CMD_LOGOUT:
         {
-            Logout logout{};
-            recv(c_sock, (char*)&logout, sizeof(logout), 0);
-            LogoutResult ret{};
-            DataHeader dh = { 0,CMD_LOGOUT };
-            send(c_sock, (const char*)&dh, sizeof(DataHeader), 0);
+            Logout logout;
+            recv(c_sock, (char*)&logout+sizeof(DataHeader), sizeof(logout)-sizeof(DataHeader), 0);//DataHeader已被接受，需要偏移DataHeader长度来接受剩余数据
+            std::cout << "receive:CMD_LOGOUT" << "\tdata length:" << logout.dataLength <<
+             "\tuserName :" << logout.userName << std::endl;
+            LogoutResult ret;
             send(c_sock, (const char*)&ret, sizeof(LogoutResult), 0);
         } break;
         default:
