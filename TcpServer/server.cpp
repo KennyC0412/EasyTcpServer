@@ -2,65 +2,8 @@
 #include <windows.h>
 #include <WinSock2.h>
 #include <iostream>
+#include "pre.h"
 
-#pragma comment(lib,"ws2_32.lib")
-const short PORT = 8888;
-const int BACKLOG = 4;
-
-enum CMD
-{
-    CMD_LOGIN,
-    CMD_LOGIN_RESULT,
-    CMD_LOGOUT,
-    CMD_LOGOUT_RESULT,
-    CMD_ERROR
-};
-//DataHead
-struct DataHeader
-{
-    short dataLength;
-    short cmd;
-};
-//DataPackage
-struct Login : public DataHeader
-{
-    Login() {
-        dataLength = sizeof(Login);
-        cmd = CMD_LOGIN;
-    }
-    char userName[32];
-    char passWord[32];
-};
-
-struct LoginResult: public DataHeader
-{
-    LoginResult() {
-        dataLength = sizeof(LoginResult);
-        cmd = CMD_LOGIN_RESULT;
-        result = 0;
-    }
-    int result;
-};
-
-struct Logout : public DataHeader
-{
-    Logout() {
-        dataLength = sizeof(Logout);
-        cmd = CMD_LOGOUT;
-    }
-    char userName[32];
-};
-
-struct LogoutResult : public DataHeader
-{
-    LogoutResult() {
-        dataLength = sizeof(LogoutResult);
-        cmd = CMD_LOGOUT_RESULT;
-        result = 0;
-
-    }
-    int result;
-};
 
 int main()
 {
@@ -106,36 +49,40 @@ int main()
     }
 
     //5.向客户端发送及接受数据
-    DataHeader header{};
     while (true) {
-        if (recv(c_sock, (char *)&header,sizeof(DataHeader), 0) <= 0) {
+        char szRecv[1024] = {};
+        //未收到有效消息，客户端已经退出
+        if (recv(c_sock, szRecv,sizeof(DataHeader), 0) <= 0) {
             std::cout << "client has quited." << std::endl;
             closesocket(c_sock);
             break;
           }
-        switch (header.cmd) {
+        //处理接收到的命令
+        DataHeader* header = reinterpret_cast<DataHeader*>(szRecv);
+        switch (header->cmd) {
         case CMD_LOGIN:
         {
-            Login login;
-            recv(c_sock, (char*)&login+sizeof(DataHeader), sizeof(login)-sizeof(DataHeader), 0);//DataHeader已被接受，需要偏移DataHeader长度来接受剩余数据
-            std::cout << "receive:CMD_LOGIN"  << "\tdata length:" << login.dataLength <<  
-            "\tuserName :" << login.userName <<"\tpassword:" << login.passWord << std::endl;
+            recv(c_sock, szRecv+sizeof(DataHeader), header->dataLength-sizeof(DataHeader), 0);//DataHeader已被接受，需要偏移DataHeader长度来接受剩余数据
+            Login* login = reinterpret_cast<Login*>(szRecv);
+            std::cout << "receive:CMD_LOGIN"  << "\tdata length:" << login->dataLength <<  
+            "\tuserName :" << login->userName <<"\tpassword:" << login->passWord << std::endl;
             //判断用户名和密码
-            LoginResult ret;
-            send(c_sock, (const char*)&ret, sizeof(LoginResult), 0);
-        } break;
+            LoginResult *ret = new LoginResult();
+            send(c_sock, (const char*)ret, sizeof(LoginResult), 0);
+        } 
+        break;
         case CMD_LOGOUT:
         {
-            Logout logout;
-            recv(c_sock, (char*)&logout+sizeof(DataHeader), sizeof(logout)-sizeof(DataHeader), 0);//DataHeader已被接受，需要偏移DataHeader长度来接受剩余数据
-            std::cout << "receive:CMD_LOGOUT" << "\tdata length:" << logout.dataLength <<
-             "\tuserName :" << logout.userName << std::endl;
-            LogoutResult ret;
-            send(c_sock, (const char*)&ret, sizeof(LogoutResult), 0);
-        } break;
+            recv(c_sock, szRecv+sizeof(DataHeader), header->dataLength-sizeof(DataHeader), 0);//DataHeader已被接受，需要偏移DataHeader长度来接受剩余数据
+            Logout* logout = reinterpret_cast<Logout*>(szRecv);
+            std::cout << "receive:CMD_LOGOUT" << "\tdata length:" << logout->dataLength <<
+             "\tuserName :" << logout->userName << std::endl;
+            LoginResult* ret = new LoginResult();
+            send(c_sock, (const char*)ret, sizeof(LogoutResult), 0);
+        } 
+        break;
         default:
-            header.cmd = CMD_ERROR;
-            header.dataLength = 0;
+            DataHeader header = { 0,CMD_ERROR };
             send(c_sock, (const char*)&header, sizeof(DataHeader), 0);
         }
     }
