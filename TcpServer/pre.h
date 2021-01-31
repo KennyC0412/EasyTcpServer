@@ -3,6 +3,7 @@
 const short PORT = 8888;
 const int BACKLOG = 4;
 
+
 enum CMD
 {
     CMD_LOGIN,
@@ -57,3 +58,7 @@ struct LogoutResult : public DataHeader
     }
     int result;
 };
+
+const char welcome[] = "Hello, This is server.\n";
+
+std::vector<SOCKET> g_clients;
