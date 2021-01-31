@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="client.cpp" />
+    <ClCompile Include="processor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pre.h" />

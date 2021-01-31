@@ -4,9 +4,12 @@
 #include <iostream>
 #include "pre.h"
 
+int processor(SOCKET c_sock);
+bool isLogin = false;
+
 int main()
 {
-	WORD ver = MAKEWORD(1, 2);
+	WORD ver = MAKEWORD(1, 3);
 	WSADATA dat;
 	WSAStartup(ver, &dat);
 	//简易TCP客户端
@@ -33,36 +36,28 @@ int main()
 	}
 
 	while (true) {
-		//输入命令请求
-		char cmdBuf[128] = {};
-		std::cin >> cmdBuf;
-		if (0 == strcmp(cmdBuf, "exit")) {
-			std::cout << "receive exit command, program quit." << std::endl;
-			break;
+		fd_set fdRead;
+		FD_ZERO(&fdRead);
+		FD_SET(c_sock,&fdRead);
+		timeval t{ 1,0 };
+		int ret = select(c_sock + 1, &fdRead, 0, 0, &t);
+		if (ret < 0) {
+			std::cout << "select finished" << std::endl;
 		}
-		else if (0 == strcmp(cmdBuf, "login")) {
+		if (FD_ISSET(c_sock, &fdRead)) {
+			FD_CLR(c_sock, &fdRead);
+			if (-1 == processor(c_sock)) {
+				std::cout << "task finished." << std::endl;
+				break;
+			}
+		}
+		if (!isLogin) {
 			Login login;
 			strcpy(login.userName, "Kenny");
 			strcpy(login.passWord, "123456");
-			//发送命令
-			send(c_sock, (const char*)&login, sizeof(login), 0);
-			//接收服务器返回数据
-			LoginResult loginRet{};
-			recv(c_sock, (char*)&loginRet, sizeof(LoginResult), 0);
-			std::cout << "Login result: " << loginRet.result << std::endl;
-		}
-		else if (0 == strcmp(cmdBuf, "logout")) {
-			Logout logout;
-			strcpy(logout.userName, "Kenny");
-			//发送命令
-			send(c_sock, (const char*)&logout, sizeof(logout), 0);
-			//接收服务器返回数据
-			LogoutResult logoutRet{};
-			recv(c_sock, (char*)&logoutRet, sizeof(LogoutResult), 0);
-			std::cout << "Logout result: " << logoutRet.result << std::endl;
-		}
-		else {
-			std::cout << "unknown command,please input again: ";
+			if (send(c_sock, (const char*)&login, sizeof(login), 0)) {
+				isLogin = true;
+			}
 		}
 	}
 

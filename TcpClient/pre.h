@@ -9,6 +9,7 @@ enum CMD
 	CMD_LOGIN_RESULT,
 	CMD_LOGOUT,
 	CMD_LOGOUT_RESULT,
+	CMD_NEW_USER_JOIN,
 	CMD_ERROR
 };
 //DataHead
@@ -55,4 +56,14 @@ struct LogoutResult :public DataHeader
 		result = 0;
 	}
 	int result;
+};
+
+struct NewUserJoin : public DataHeader
+{
+	NewUserJoin() {
+		dataLength = sizeof(NewUserJoin);
+		sock = 0;
+		cmd = CMD_NEW_USER_JOIN;
+	}
+	int sock;
 };
