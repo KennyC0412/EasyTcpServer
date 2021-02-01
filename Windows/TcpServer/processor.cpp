@@ -12,7 +12,7 @@ int processor(SOCKET c_sock) {
     //处理接收到的命令
     DataHeader* header = reinterpret_cast<DataHeader*>(szRecv);
     if (recv(c_sock, szRecv, sizeof(DataHeader), 0) <= 0) {
-        std::cout << "client has quited." << std::endl;
+        std::cout << "client has quited. socket is:" << c_sock << std::endl;
         return -1;
     }
     switch (header->cmd) {
@@ -20,7 +20,7 @@ int processor(SOCKET c_sock) {
     {
         recv(c_sock, szRecv + sizeof(DataHeader), header->dataLength - sizeof(DataHeader), 0);//DataHeader已被接受，需要偏移DataHeader长度来接受剩余数据
         Login* login = reinterpret_cast<Login*>(szRecv);
-        std::cout << "receive:CMD_LOGIN" << "\tdata length:" << login->dataLength <<
+        std::cout << "receive:CMD_LOGIN from client socket:"<< c_sock << "\tdata length:" << login->dataLength <<
             "\tuserName :" << login->userName << "\tpassword:" << login->passWord << std::endl;
         //判断用户名和密码
         LoginResult* ret = new LoginResult();
@@ -31,7 +31,7 @@ int processor(SOCKET c_sock) {
     {
         recv(c_sock, szRecv + sizeof(DataHeader), header->dataLength - sizeof(DataHeader), 0);//DataHeader已被接受，需要偏移DataHeader长度来接受剩余数据
         Logout* logout = reinterpret_cast<Logout*>(szRecv);
-        std::cout << "receive:CMD_LOGOUT" << "\tdata length:" << logout->dataLength <<
+        std::cout << "receive:CMD_LOGOUT from client socket:" << c_sock << "\tdata length:" << logout->dataLength <<
             "\tuserName :" << logout->userName << std::endl;
         LoginResult* ret = new LoginResult();
         send(c_sock, (const char*)ret, sizeof(LogoutResult), 0);

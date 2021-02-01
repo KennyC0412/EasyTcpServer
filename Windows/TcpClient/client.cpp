@@ -2,10 +2,12 @@
 #include <Windows.h>
 #include <WinSock2.h>
 #include <iostream>
+#include <thread>
 #include "pre.h"
 
 int processor(SOCKET c_sock);
-bool isLogin = false;
+void cmdThread(SOCKET c_sock);
+extern bool RUN;
 
 int main()
 {
@@ -34,8 +36,10 @@ int main()
 		if(0 < recv(c_sock, buffer, 1024, 0))
 			std::cout << buffer;
 	}
+	std::thread t(cmdThread,c_sock);
+	t.detach();
 
-	while (true) {
+	while (RUN) {
 		fd_set fdRead;
 		FD_ZERO(&fdRead);
 		FD_SET(c_sock,&fdRead);
@@ -49,14 +53,6 @@ int main()
 			if (-1 == processor(c_sock)) {
 				std::cout << "task finished." << std::endl;
 				break;
-			}
-		}
-		if (!isLogin) {
-			Login login;
-			strcpy(login.userName, "Kenny");
-			strcpy(login.passWord, "123456");
-			if (send(c_sock, (const char*)&login, sizeof(login), 0)) {
-				isLogin = true;
 			}
 		}
 	}

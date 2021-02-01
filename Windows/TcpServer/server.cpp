@@ -41,11 +41,11 @@ int main()
         fd_set fdRead;
         fd_set fdWrite;
         fd_set fdExp;
-
+        //清理集合
         FD_ZERO(&fdRead);
         FD_ZERO(&fdWrite);
         FD_ZERO(&fdExp);
-
+        //将描述符加入集合
         FD_SET(s_sock, &fdRead);
         FD_SET(s_sock, &fdWrite);
         FD_SET(s_sock, &fdExp);
@@ -63,6 +63,7 @@ int main()
            std::cout << "select finished." << std::endl;
            break;
        }
+       //判断描述符是否在集合中，因为select会清理未响应描述符
        if (FD_ISSET(s_sock, &fdRead) ){
            FD_CLR(s_sock, &fdRead);
            //接受客户端连接
@@ -74,9 +75,14 @@ int main()
                std::cerr << "failed to create socket." << std::endl;
            }
            else {
+               for (size_t i = 0; i < g_clients.size(); ++i) {
+                   NewUserJoin userJoin;
+                   userJoin.sock = c_sock;
+                   send(g_clients[i],(const char *)&userJoin,sizeof(userJoin),0);
+               }
                //存储接入客户端的套接字
                g_clients.push_back(c_sock);
-                std::cout << "new client join: IP = " << inet_ntoa(clientAddr.sin_addr) << "\t socket = " << clientAddr.sin_port << std::endl;
+                std::cout << "new client join: IP = " << inet_ntoa(clientAddr.sin_addr) << "\t socket = " << c_sock << std::endl;
                 send(c_sock, welcome, strlen(welcome) + 1, 0);
             }
        }
@@ -88,8 +94,6 @@ int main()
                }
            }
        }
-
-       std::cout << "空闲时间处理其他业务." <<std::endl;
     }
 
     //服务器关闭，关闭所有连接
