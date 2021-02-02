@@ -18,15 +18,21 @@
     <ClCompile Include="client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="processor.cpp">
+    <ClCompile Include="cmdThread.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="cmdThread.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pre.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="client.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="messageHeader.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

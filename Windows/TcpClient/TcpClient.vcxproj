@@ -149,9 +149,11 @@
   <ItemGroup>
     <ClCompile Include="client.cpp" />
     <ClCompile Include="cmdThread.cpp" />
-    <ClCompile Include="processor.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="client.h" />
+    <ClInclude Include="messageHeader.h" />
     <ClInclude Include="pre.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
