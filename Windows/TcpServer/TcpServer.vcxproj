@@ -145,10 +145,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cmdThread.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="server.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CELLtimestamp.hpp" />
     <ClInclude Include="messageHeader.h" />
     <ClInclude Include="pre.h" />
     <ClInclude Include="server.h" />

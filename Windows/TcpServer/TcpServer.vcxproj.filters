@@ -21,6 +21,9 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="cmdThread.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pre.h">
@@ -31,6 +34,9 @@
     </ClInclude>
     <ClInclude Include="server.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CELLtimestamp.hpp">
+      <Filter>源文件</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

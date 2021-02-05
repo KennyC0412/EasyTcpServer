@@ -152,6 +152,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CELLtimestamp.hpp" />
     <ClInclude Include="client.h" />
     <ClInclude Include="messageHeader.h" />
     <ClInclude Include="pre.h" />

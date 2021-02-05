@@ -14,10 +14,8 @@
 	#define INVALID_SOCKET (SOCKET)(~0)
 	#define SOCKET_ERROR				     (-1)
 #endif
-#include <iostream>
-#include <thread>
-#include <vector>
 #include "messageHeader.h"
+#include "pre.h"
 
 class TcpClient {
 public:
@@ -36,10 +34,10 @@ public:
 	int recvData(SOCKET);
 	//发送数据
 	int sendData(DataHeader *);
-	//响应数据
-	void resData(DataHeader *);
+	//处理网络消息
+	void onNetMsg(DataHeader *);
 	//状态查询
-	bool OnRun();
+	bool onRun();
 	//
 	bool isRun();
 	SOCKET get_sock() { return c_sock; }
@@ -47,6 +45,13 @@ private:
 	SOCKET c_sock;
 	sockaddr_in _sin;
 	std::vector<int> g_clients;
+	SOCKET memory;
+	//接收缓冲区
+	char szRecv[RECV_BUFF_SIZE] = {};
+	//消息缓冲区
+	char szMsgBuf[RECV_BUFF_SIZE * 10] = {};
+	//
+	int lastPos = 0;
 };
 
 #endif

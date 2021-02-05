@@ -1,12 +1,12 @@
 #define WIN32_LEAN_AND_MEAN
 #include "pre.h"
 #include "messageHeader.h"
-#include "client.h"
+#include "server.h"
 
 bool g_bRun = true;
+
 void cmdThread()
 {
-	
 	while (true) {
 		char cmdBuf[256];
 		std::cin >> cmdBuf;

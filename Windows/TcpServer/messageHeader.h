@@ -16,6 +16,11 @@ enum CMD
 //DataHead
 struct DataHeader
 {
+    DataHeader()
+    {
+        dataLength = sizeof(DataHeader);
+        cmd = 0;
+    }
     short dataLength;
     short cmd;
 };

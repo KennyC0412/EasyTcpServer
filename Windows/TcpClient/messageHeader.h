@@ -13,6 +13,11 @@ enum CMD
 //DataHead
 struct DataHeader
 {
+	DataHeader()
+	{
+		dataLength = sizeof(DataHeader);
+		cmd = 0;
+	}
 	short dataLength;
 	short cmd;
 };
@@ -44,6 +49,7 @@ struct Logout :public DataHeader
 		cmd = CMD_LOGOUT;
 	}
 	char userName[32] = {};
+
 };
 
 struct LogoutResult :public DataHeader

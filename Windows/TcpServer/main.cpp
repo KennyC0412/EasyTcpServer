@@ -2,6 +2,8 @@
 #include "messageHeader.h"
 #include "server.h"
 
+void cmdThread();
+extern bool g_bRun;
 
 int main()
 {
@@ -9,9 +11,9 @@ int main()
     server.initSocket();
     server.bindSocket();
     server.listenPort();
-    server.acConnection();
-    
-    while (server.isRun())
+    std::thread t(cmdThread);
+    t.detach();
+    while (g_bRun)
     {
         server.onRun();
     }
