@@ -1,8 +1,8 @@
 #ifdef _WIN32
 	#pragma once
 #endif
-#ifndef _CELLTIMESTAMP_H_
-#define _CELLTIMESTAMP_H_
+#ifndef _CELLTIMESTAMP_HPP_
+#define _CELLTIMESTAMP_HPP_
 
 //#include <window.h>
 #include <chrono>

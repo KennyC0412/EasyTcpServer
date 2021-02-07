@@ -21,7 +21,7 @@
 #include "pre.h"
 #include "CELLtimestamp.hpp"
 #include <algorithm>
-
+#include <atomic>
 
 class ClientSocket
 {
@@ -32,10 +32,41 @@ public:
 	char* msgBuf() { return szMsgBuf; }
 	int getPos() { return lastPos; }
 	void setPos(int pos) { lastPos = pos; }
-private:
 	SOCKET sockfd;
+private:
+	
 	char szMsgBuf[RECV_BUFF_SIZE * 10] = {};
 	int lastPos = 0;
+};
+
+class CellServer {
+public:
+	CellServer(SOCKET sock = INVALID_SOCKET) :s_sock(sock), pThread(nullptr) {}
+	~CellServer() { closeServer(); }
+	//处理网络消息
+	bool onRun();
+	bool isRun() { return s_sock != INVALID_SOCKET; }
+	//接收数据
+	int recvData(ClientSocket* client);
+	//响应消息
+	virtual void onNetMsg(DataHeader*, SOCKET);
+	void closeServer();
+	void addClient(ClientSocket* client);
+	void Start();
+	size_t getClientCount() { return g_clients.size() + clientsBuffer.size(); }
+private:
+	SOCKET s_sock;
+	//接收缓冲区
+	char szRecv[RECV_BUFF_SIZE] = {};
+	//正式客户队列
+	std::vector<ClientSocket*> g_clients;
+	//缓冲客户队列
+	std::vector<ClientSocket*> clientsBuffer;
+	std::mutex m;
+	std::thread* pThread;
+	CELLTimestamp tTime;
+public :
+	std::atomic_int recvCount = 0;
 };
 
 
@@ -51,28 +82,26 @@ public:
 	int listenPort(int backlog = BACKLOG);
 	//接受连接
 	int acConnection();
-	//接收数据
-	int recvData(ClientSocket* client);
 	//发送数据
 	int sendData(SOCKET,DataHeader *);
 	//群发消息
 	void sendToAll(DataHeader *);
-	//处理事务
-	bool onRun();
 	//关闭套接字
 	void closeSocket(SOCKET);
-	//响应消息
-	virtual void onNetMsg(DataHeader *,SOCKET );
+	void Start();
 	//判断
 	bool isRun();
-	//
+	//响应消息
+	void time4msg();
+	bool onRun();
 	void closeServer();
+	void addClientToServer(ClientSocket* client);
 private:
 	SOCKET s_sock;
 	std::vector<ClientSocket *> g_clients;
-	//接收缓冲区
-	char szRecv[RECV_BUFF_SIZE] = {};
+	std::vector<CellServer *> g_servers;
 	CELLTimestamp tTime;
+	std::atomic_int recvCount = 0;
 };
 
 #endif // !_SERVER_H_

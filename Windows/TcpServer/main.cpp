@@ -11,6 +11,7 @@ int main()
     server.initSocket();
     server.bindSocket();
     server.listenPort();
+    server.Start();
     std::thread t(cmdThread);
     t.detach();
     while (g_bRun)
