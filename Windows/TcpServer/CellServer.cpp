@@ -10,7 +10,8 @@
 bool CellServer::onRun()
 {
 	while (isRun()) {
-		if (clientsBuffer.size() > 0) {
+		if (clientsBuffer.size() > 0) 
+		{	//将缓冲区的客户端加入到客户队列
 			std::lock_guard<std::mutex> lock(m);
 			for (auto c : clientsBuffer) {
 				g_clients.push_back(c);
@@ -24,16 +25,8 @@ bool CellServer::onRun()
 		}
 		//伯克利socket
 		fd_set fdRead;
-		fd_set fdWrite;
-		fd_set fdExp;
 		//清理集合
 		FD_ZERO(&fdRead);
-		FD_ZERO(&fdWrite);
-		FD_ZERO(&fdExp);
-		//将描述符加入集合
-		FD_SET(s_sock, &fdRead);
-		FD_SET(s_sock, &fdWrite);
-		FD_SET(s_sock, &fdExp);
 		//linux下的最大描述符
 		SOCKET maxSock = g_clients[0]->getSock();
 		//在每轮循环中将客户端加入监听集合
@@ -46,8 +39,7 @@ bool CellServer::onRun()
 			}
 #endif 
 		}
-		timeval t{ 1,0 };
-		int ret = select(maxSock + 1, &fdRead, &fdWrite, &fdExp, &t);
+		int ret = select(maxSock + 1, &fdRead, nullptr, nullptr, nullptr);
 		if (ret < 0) {
 			std::cout << "select finished." << std::endl;
 			closeServer();
@@ -59,6 +51,7 @@ bool CellServer::onRun()
 					delete g_clients[i];
 					auto it = g_clients.begin() + i;
 					if (it != g_clients.end()) {
+						pINetEvent->onLeave(g_clients[i]);
 						g_clients.erase(it);
 					}
 					size--;
@@ -101,13 +94,6 @@ int CellServer::recvData(ClientSocket* client)
 void CellServer::onNetMsg(DataHeader* dh, SOCKET c_sock)
 {
 	recvCount++;
-	/*auto t1 = tTime.getElapsedSecond();
-	if (t1 >= 1.0) {
-		std::cout << "time: " << "<" << t1 << "> client num:<" << g_clients.size() << ">,"
-			<< "recvCount:" << recvCount << std::endl;
-		recvCount = 0;
-		tTime.update();
-	}*/
 	switch (dh->cmd) {
 	case CMD_LOGIN:
 	{

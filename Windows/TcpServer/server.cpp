@@ -5,7 +5,7 @@
 int TcpServer::initSocket()
 {
 #ifdef _WIN32
-	WORD ver = MAKEWORD(1, 5);
+	WORD ver = MAKEWORD(1, 7);
 	WSADATA dat;
 	WSAStartup(ver, &dat);
 #endif // _WIN32
@@ -89,8 +89,8 @@ int TcpServer::acConnection()
 		}
 		else {
 			addClientToServer(new ClientSocket(c_sock));
-			std::cout << "new client join: " << inet_ntoa(clientAddr.sin_addr) << ":" 
-				<<clientAddr.sin_port<< "  socket"<<++count<<" = " << c_sock << std::endl;
+			//std::cout << "new client join: " << inet_ntoa(clientAddr.sin_addr) << ":" 
+				//<<clientAddr.sin_port<< "  socket"<<++count<<" = " << c_sock << std::endl;
 		}
 		return 0;
 }
@@ -110,24 +110,24 @@ void TcpServer::addClientToServer(ClientSocket* client)
 
 bool TcpServer::onRun()
 {
-	if (isRun()) {
+	while (isRun()) {
 		time4msg();
 		//伯克利socket
 		fd_set fdRead;
-		fd_set fdWrite;
-		fd_set fdExp;
+		//fd_set fdWrite;
+		//fd_set fdExp;
 		//清理集合
 		FD_ZERO(&fdRead);
-		FD_ZERO(&fdWrite);
-		FD_ZERO(&fdExp);
+		//FD_ZERO(&fdWrite);
+		//FD_ZERO(&fdExp);
 		//将描述符加入集合
 		FD_SET(s_sock, &fdRead);
-		FD_SET(s_sock, &fdWrite);
-		FD_SET(s_sock, &fdExp);
+		//FD_SET(s_sock, &fdWrite);
+		//FD_SET(s_sock, &fdExp);
 		//linux下的最大描述符
 		SOCKET maxSock = s_sock;
 		timeval t{ 0,0 };
-		int ret = select(maxSock + 1, &fdRead, &fdWrite, &fdExp, &t);
+		int ret = select(maxSock + 1, &fdRead, nullptr, nullptr, &t);
 		if (ret < 0) {
 			std::cout << "select finished." << std::endl;
 			closeServer();
@@ -148,6 +148,7 @@ void TcpServer::Start()
 	for (int n = 0; n < CELL_SERVER_COUNT; ++n) {
 		auto s = new CellServer(s_sock);
 		g_servers.push_back(s);
+		s->setEventObj(this);
 		s->Start();
 	}
 }
@@ -187,8 +188,8 @@ void TcpServer::time4msg()
 			recvCount += s->recvCount;
 			s->recvCount = 0;
 		}
-		std::cout << "time: " << "<" << t1 << "> client num:<" << g_clients.size() << ">,"
-			<< "recvCount:" << recvCount << std::endl;
+		std::cout << "thread:<" << g_servers.size() << ">, time: " << "<" << t1 << "> client num:<" <<
+			g_clients.size() << ">," << "recvCount:" << recvCount << std::endl;
 		tTime.update();
 	}
 }
@@ -196,15 +197,14 @@ void TcpServer::time4msg()
 void TcpServer::closeServer()
 {
 #ifdef _WIN32
-	for (auto s : g_clients) {
-		closesocket(s->getSock());
+	
+	for (auto s : g_servers) {
 		delete s;
 	}
 	closesocket(s_sock);
 	WSACleanup();
 #else
-	for (auto s : g_clients) {
-		close(s->getSock());
+	for (auto s : g_servers) {
 		delete s;
 	}
 	close(s_sock);
@@ -213,6 +213,7 @@ void TcpServer::closeServer()
 		s_sock = INVALID_SOCKET;
 	}
 	g_clients.clear();
+	g_servers.clear();
 }
 
 bool TcpServer::isRun()
@@ -220,3 +221,15 @@ bool TcpServer::isRun()
 	return s_sock != INVALID_SOCKET;
 }
 
+void TcpServer::onLeave(ClientSocket* pClient)
+{
+	int size = g_clients.size();
+	for (int i = 0; i < size;++i) {
+		if (pClient == g_clients[i]) {
+			auto iter = g_clients.begin() + i;
+			if (iter != g_clients.end()) {
+				g_clients.erase(iter);
+			}
+		}
+	}
+}

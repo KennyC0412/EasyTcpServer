@@ -5,7 +5,8 @@
 #define _SERVER_H_
 #ifdef _WIN32
 	#define WIN32_LEAN_AND_MEAN
-	#define FD_SETSIZE 1024
+	//最大连接数
+	#define FD_SETSIZE 2501
 	#include <Windows.h>
 	#include <WinSock2.h>
 #else
@@ -39,9 +40,18 @@ private:
 	int lastPos = 0;
 };
 
-class CellServer {
+class INetEvent 
+{
 public:
-	CellServer(SOCKET sock = INVALID_SOCKET) :s_sock(sock), pThread(nullptr) {}
+	//有客户端退出时通知
+	virtual void onLeave(ClientSocket *) = 0;
+	//virtual void onNetMsg(ClientSocket*) = 0;
+};
+
+class CellServer 
+{
+public:
+	CellServer(SOCKET sock = INVALID_SOCKET) :s_sock(sock), pThread(nullptr),pINetEvent(nullptr) {}
 	~CellServer() { closeServer(); }
 	//处理网络消息
 	bool onRun();
@@ -50,8 +60,11 @@ public:
 	int recvData(ClientSocket* client);
 	//响应消息
 	virtual void onNetMsg(DataHeader*, SOCKET);
+	//关闭服务器
 	void closeServer();
+	//添加客户端
 	void addClient(ClientSocket* client);
+	void setEventObj(INetEvent* event) { pINetEvent = event; }
 	void Start();
 	size_t getClientCount() { return g_clients.size() + clientsBuffer.size(); }
 private:
@@ -65,12 +78,14 @@ private:
 	std::mutex m;
 	std::thread* pThread;
 	CELLTimestamp tTime;
+	INetEvent* pINetEvent;
 public :
 	std::atomic_int recvCount = 0;
 };
 
 
-class TcpServer {
+class TcpServer :public INetEvent
+{
 public:
 	TcpServer():s_sock(INVALID_SOCKET){}
 	virtual ~TcpServer() { closeServer(); }
@@ -95,7 +110,9 @@ public:
 	void time4msg();
 	bool onRun();
 	void closeServer();
-	void addClientToServer(ClientSocket* client);
+	void addClientToServer(ClientSocket*);
+	virtual void onLeave(ClientSocket*);
+	//virtual void onNetMsg(SOCKET,DataHeader *) { time4msg(); }
 private:
 	SOCKET s_sock;
 	std::vector<ClientSocket *> g_clients;
