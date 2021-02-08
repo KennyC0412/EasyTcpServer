@@ -2,21 +2,18 @@
 #include "messageHeader.h"
 #include "pre.h"
 
-class CELLTimestamp {
-
-};
+TcpClient* client[cCount];
 
 int TcpClient::initSocket() 
 {
 #ifdef _WIN32
 	//建立windows socket环境
-	WORD ver = MAKEWORD(1, 5);
+	WORD ver = MAKEWORD(1, 7);
 	WSADATA dat;
 	WSAStartup(ver, &dat);
 #endif
 	//如果有旧socket存在，关闭它
 	if (INVALID_SOCKET != c_sock) {
-		std::cout << "Old socket: " << c_sock << " closed." << std::endl;
 		closeSocket();
 	}
 	//创建socket
@@ -28,7 +25,7 @@ int TcpClient::initSocket()
 		return -1;
 	}
 	else {
-		//std::cout << "Create socket successed." << std::endl;
+		isConnect = true;
 	}
 	return 0;
 }
@@ -45,16 +42,12 @@ int TcpClient::connServer(const char *ip,short port)
 #endif
 	//如果还未创建有效套接字，初始化一个套接字
 	if (INVALID_SOCKET == c_sock) {
-		//std::cout << "No valid socket , new socket initialized." << std::endl;
 		initSocket();
 	}
 	if (-1 == connect(c_sock, (const sockaddr*)&_sin, sizeof(sockaddr_in))) {
 		std::cerr << "Failed to connect server." << std::endl;
 		closeSocket();
 		return -1;
-	}
-	else {
-		//std::cout << "Success to connect server:" << ip <<':'<<_sin.sin_port<< std::endl;
 	}
 	return 0;
 }
@@ -121,10 +114,10 @@ void TcpClient::onNetMsg(DataHeader* dh)
 	}
 }
 
-int TcpClient::sendData(DataHeader *dh)
+int TcpClient::sendData(DataHeader *dh,int len)
 {
 	if (isRun() && dh) {
-		return send(c_sock, (const char*)dh, dh->dataLength, 0);
+		return send(c_sock, (const char*)dh, len, 0);
 	}
 	return SOCKET_ERROR;
 }
