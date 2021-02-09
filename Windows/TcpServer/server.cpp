@@ -11,7 +11,6 @@ int TcpServer::initSocket()
 #endif // _WIN32
 	//如果有旧socket存在，关闭它
 	if (INVALID_SOCKET != s_sock) {
-		std::cout << "Old socket: " << s_sock << " closed." << std::endl;
 		closeSocket(s_sock);
 	}
 	//创建socket
@@ -85,26 +84,26 @@ int TcpServer::acConnection()
 #endif
 		if (INVALID_SOCKET == c_sock) {
 			std::cerr << "accept an invalid socket." << std::endl;
+			closeSocket(c_sock);
 			return -1;
 		}
 		else {
 			addClientToServer(new ClientSocket(c_sock));
-			//std::cout << "new client join: " << inet_ntoa(clientAddr.sin_addr) << ":" 
-				//<<clientAddr.sin_port<< "  socket"<<++count<<" = " << c_sock << std::endl;
+			//inet_ntoa(clientAddr.sin_addr);
 		}
 		return 0;
 }
 
 void TcpServer::addClientToServer(ClientSocket* client)
 {
-	g_clients.push_back(client);
-	//寻找客户最少的线程并添加
+	//寻找客户端最少的线程并添加
 	auto minServer = g_servers[0];
 	for (size_t i = 1; i < g_servers.size(); ++i) {
 		if (g_servers[i]->getClientCount() < minServer->getClientCount()) {
 			minServer = g_servers[i];
 		}
 	}
+	onJoin(client);
 	minServer->addClient(client);
 }
 
@@ -112,7 +111,6 @@ bool TcpServer::onRun()
 {
 	while (isRun()) {
 		time4msg();
-		//伯克利socket
 		fd_set fdRead;
 		//fd_set fdWrite;
 		//fd_set fdExp;
@@ -143,12 +141,14 @@ bool TcpServer::onRun()
 	return false;
 }
 
-void TcpServer::Start()
+void TcpServer::Start(int tCount)
 {
-	for (int n = 0; n < CELL_SERVER_COUNT; ++n) {
+	for (int n = 0; n < tCount; ++n) {
 		auto s = new CellServer(s_sock);
 		g_servers.push_back(s);
+		//注册网络事件接收对象
 		s->setEventObj(this);
+		//启动消息处理线程
 		s->Start();
 	}
 }
@@ -159,13 +159,6 @@ int TcpServer::sendData(SOCKET c_sock, DataHeader *dh)
 		return  send(c_sock, (const char*)dh, dh->dataLength, 0);
 	}
 	return SOCKET_ERROR;
-}
-
-void TcpServer::sendToAll(DataHeader* dh)
-{
-	for (auto x : g_clients) {
-		sendData(x->getSock(), dh);
-	}
 }
 
 void TcpServer::closeSocket(SOCKET c_sock)
@@ -179,17 +172,14 @@ void TcpServer::closeSocket(SOCKET c_sock)
 #endif
 }
 
+//计算
 void TcpServer::time4msg()
 {
 	auto t1 = tTime.getElapsedSecond();
 	if (t1 >= 1.0) {
-		recvCount = 0;
-		for (auto s : g_servers) {
-			recvCount += s->recvCount;
-			s->recvCount = 0;
-		}
 		std::cout << "thread:<" << g_servers.size() << ">, time: " << "<" << t1 << "> client num:<" <<
-			g_clients.size() << ">," << "recvCount:" << recvCount << std::endl;
+			clientNum << ">," << "recvCount:" << recvCount << std::endl;
+		recvCount = 0;
 		tTime.update();
 	}
 }
@@ -197,7 +187,6 @@ void TcpServer::time4msg()
 void TcpServer::closeServer()
 {
 #ifdef _WIN32
-	
 	for (auto s : g_servers) {
 		delete s;
 	}
@@ -212,7 +201,6 @@ void TcpServer::closeServer()
 	if (INVALID_SOCKET != s_sock) {
 		s_sock = INVALID_SOCKET;
 	}
-	g_clients.clear();
 	g_servers.clear();
 }
 
@@ -221,15 +209,9 @@ bool TcpServer::isRun()
 	return s_sock != INVALID_SOCKET;
 }
 
-void TcpServer::onLeave(ClientSocket* pClient)
-{
-	int size = g_clients.size();
-	for (int i = 0; i < size;++i) {
-		if (pClient == g_clients[i]) {
-			auto iter = g_clients.begin() + i;
-			if (iter != g_clients.end()) {
-				g_clients.erase(iter);
-			}
+int ClientSocket::sendData(DataHeader* dh) {
+		if (dh) {
+			return send(sockfd, (const char*)dh, dh->dataLength, 0);
 		}
-	}
+		return SOCKET_ERROR;
 }

@@ -7,57 +7,85 @@
 #include "server.h"
 #include <functional>
 
+bool client_change = true;
+fd_set fdRead_back;
 bool CellServer::onRun()
 {
 	while (isRun()) {
-		if (clientsBuffer.size() > 0) 
+		if (!clientsBuffer.empty()) 
 		{	//将缓冲区的客户端加入到客户队列
 			std::lock_guard<std::mutex> lock(m);
 			for (auto c : clientsBuffer) {
-				g_clients.push_back(c);
+				g_clients[c->getSock()] = c;
 			}
 			clientsBuffer.clear();
+			client_change = true;
 		}
-		if (g_clients.empty()) {
-			std::chrono::milliseconds t(1);
+	   if (g_clients.empty()) {
+			std::chrono::milliseconds t(5);
 			std::this_thread::sleep_for(t);
 			continue;
 		}
-		//伯克利socket
 		fd_set fdRead;
 		//清理集合
 		FD_ZERO(&fdRead);
 		//linux下的最大描述符
-		SOCKET maxSock = g_clients[0]->getSock();
+		SOCKET maxSock = g_clients.begin()->first;
 		//在每轮循环中将客户端加入监听集合
-		size_t size = g_clients.size();
-		for (size_t i = 0; i < size; ++i) {
-			FD_SET(g_clients[i]->getSock(), &fdRead);
+		if (client_change) {
+			client_change = false;
+			for (auto iter : g_clients) {
+				FD_SET(iter.first, &fdRead);
 #ifndef _WIN32
-			if (maxSock < g_clients[i]->getSock()) {
-				maxSock = g_clients[i]->getSock();
-			}
+				if (maxSock < iter.first ){
+					maxSock = iter.first;
+				}
 #endif 
+			}
+			memcpy(&fdRead_back, &fdRead,  sizeof(fd_set));
 		}
-		int ret = select(maxSock + 1, &fdRead, nullptr, nullptr, nullptr);
+		else {
+			memcpy(&fdRead, &fdRead_back, sizeof(fd_set));
+		}
+		timeval t{ 0,0 };
+		int ret = select(maxSock + 1, &fdRead, nullptr, nullptr, &t);
 		if (ret < 0) {
 			std::cout << "select finished." << std::endl;
 			closeServer();
 			return false;
 		}
-		for (size_t i = 0; i < size; ++i) {
-			if (FD_ISSET(g_clients[i]->getSock(), &fdRead)) {
-				if (-1 == recvData(g_clients[i])) {
-					delete g_clients[i];
-					auto it = g_clients.begin() + i;
-					if (it != g_clients.end()) {
-						pINetEvent->onLeave(g_clients[i]);
-						g_clients.erase(it);
-					}
-					size--;
+		else if (ret == 0) {
+			continue;
+		}
+#ifdef _WIN32
+		for (int i = 0; i < fdRead.fd_count; i++) {
+			auto iter = g_clients.find(fdRead.fd_array[i]);
+			if (iter != g_clients.end()) {
+				if (-1 == recvData(iter->second)) {
+					if (pINetEvent)
+						pINetEvent->onLeave(iter->second);
+					client_change = true;
+					g_clients.erase(iter->first);
 				}
 			}
 		}
+#else
+		std::vector<ClientSocket*> temp;
+		for (auto iter : g_clients) {
+			if (FD_ISSET(iter.first, &fdRead)) {
+				if (-1 == recvData(iter.second)) {
+					client_change = true;
+					temp.push_back(iter.second);
+					if (pINetEvent)
+						pINetEvent->onLeave(iter.second);
+				}
+			}
+		}
+		for (auto c : temp) {
+			g_clients.erase(c->getSock());
+			delete c;
+		}
+#endif
 	}
 	return false;
 }
@@ -66,7 +94,6 @@ int CellServer::recvData(ClientSocket* client)
 {
 	int nLen = recv(client->getSock(), szRecv, RECV_BUFF_SIZE, 0);
 	if (nLen <= 0) {
-		std::cout << "Client quit, connection closed. socket:" << client->getSock() << std::endl;
 		return -1;
 	}
 	//将接收到的数据拷贝到消息缓冲区
@@ -78,7 +105,7 @@ int CellServer::recvData(ClientSocket* client)
 		if (client->getPos() >= header->dataLength) {
 			//记录缓冲区中未处理数据长度
 			int sizeMark = client->getPos() - header->dataLength;
-			onNetMsg(header, client->getSock());
+			onNetMsg(client,header);
 			//将缓冲区消息前移
 			memcpy(client->msgBuf(), client->msgBuf() + header->dataLength, sizeMark);
 			client->setPos(sizeMark);
@@ -91,39 +118,29 @@ int CellServer::recvData(ClientSocket* client)
 	return 0;
 }
 
-void CellServer::onNetMsg(DataHeader* dh, SOCKET c_sock)
+void CellServer::onNetMsg(ClientSocket *pclient ,DataHeader* dh)
 {
-	recvCount++;
+    pINetEvent->onNetMsg(pclient,dh);
 	switch (dh->cmd) {
 	case CMD_LOGIN:
 	{
-		Login* login = static_cast<Login*>(dh);
-		//std::cout << "receive:CMD_LOGIN from client socket:" << c_sock << "\tdata length:" << login->dataLength <<
-			//"\tuserName :" << login->userName << "\tpassword:" << login->passWord << std::endl;
-		//判断用户名和密码
-		//LoginResult* ret = new LoginResult();
-		//send(c_sock, (const char*)ret, sizeof(LoginResult), 0);
 	}
 	break;
 	case CMD_LOGOUT:
 	{
-		Logout* logout = static_cast<Logout*>(dh);
-		//std::cout << "receive:CMD_LOGOUT from client socket:" << c_sock << "\tdata length:" << logout->dataLength <<
-			//"\tuserName :" << logout->userName << std::endl;
-		//LogoutResult* ret = new LogoutResult();
-		//send(c_sock, (const char*)ret, sizeof(LogoutResult), 0);
+		
 	}
 	break;
-	default:
-		std::cout << "socket :" << c_sock << " receive unknow message. " << dh->dataLength << std::endl;
-		//DataHeader header;
-		//send(c_sock, (const char*)&header, sizeof(DataHeader), 0);
+	default: {
+		std::cout << "socket :" << pclient->getSock() << " receive unknow message. " << dh->dataLength << std::endl;
+	}
 	}
 }
 
 void CellServer::Start()
 {
-	pThread = new std::thread(std::mem_fun(&CellServer::onRun),this);
+	//mem_fn自动识别使用指针或引用进行绑定
+	pThread = new std::thread(std::mem_fn(&CellServer::onRun),this);
 }
 
 void CellServer::addClient(ClientSocket* client)
@@ -136,21 +153,25 @@ void CellServer::closeServer()
 {
 #ifdef _WIN32
 	for (auto s : g_clients) {
-		closesocket(s->getSock());
-		delete s;
+		closesocket(s.first);
+		delete s.second;
 	}
+
 	closesocket(s_sock);
-	WSACleanup();
 #else
 	for (auto s : g_clients) {
-		close(s->getSock());
-		delete s;
+		close(s.first);
+		delete s.second;
 	}
 	close(s_sock);
 #endif
 	if (INVALID_SOCKET != s_sock) {
 		s_sock = INVALID_SOCKET;
 	}
+	delete pThread;
+	pThread = nullptr;
+	delete pINetEvent;
+	pINetEvent = nullptr;
 	g_clients.clear();
 }
 

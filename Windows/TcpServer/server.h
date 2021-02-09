@@ -1,22 +1,5 @@
-#ifdef _WIN32
-	#pragma once
-#endif
 #ifndef _SERVER_H_
 #define _SERVER_H_
-#ifdef _WIN32
-	#define WIN32_LEAN_AND_MEAN
-	//最大连接数
-	#define FD_SETSIZE 2501
-	#include <Windows.h>
-	#include <WinSock2.h>
-#else
-	#include <unistd.h>
-	#include <arpa/inet.h>
-	#include <string.h>
-	#define SOCKET int
-	#define INVALID_SOCKET (SOCKET)(~0)
-	#define SOCKET_ERROR				     (-1)
-#endif
 
 #include "messageHeader.h"
 #include "pre.h"
@@ -33,25 +16,28 @@ public:
 	char* msgBuf() { return szMsgBuf; }
 	int getPos() { return lastPos; }
 	void setPos(int pos) { lastPos = pos; }
+	int sendData(DataHeader*);
 	SOCKET sockfd;
 private:
-	
-	char szMsgBuf[RECV_BUFF_SIZE * 10] = {};
+	char szMsgBuf[RECV_BUFF_SIZE * 5] = {};
 	int lastPos = 0;
 };
-
+//网络事件接口
 class INetEvent 
 {
 public:
-	//有客户端退出时通知
+	//客户端加入事件
+	virtual void onJoin(ClientSocket*) = 0;
+	//客户端离开事件
 	virtual void onLeave(ClientSocket *) = 0;
-	//virtual void onNetMsg(ClientSocket*) = 0;
+	//客户端消息事件
+	virtual void onNetMsg(ClientSocket* ,DataHeader*) = 0;
 };
 
 class CellServer 
 {
 public:
-	CellServer(SOCKET sock = INVALID_SOCKET) :s_sock(sock), pThread(nullptr),pINetEvent(nullptr) {}
+	CellServer(SOCKET sock = INVALID_SOCKET) :s_sock(sock), pThread(nullptr),pINetEvent(nullptr){}
 	~CellServer() { closeServer(); }
 	//处理网络消息
 	bool onRun();
@@ -59,7 +45,7 @@ public:
 	//接收数据
 	int recvData(ClientSocket* client);
 	//响应消息
-	virtual void onNetMsg(DataHeader*, SOCKET);
+	void onNetMsg(ClientSocket* pclient, DataHeader* dh);
 	//关闭服务器
 	void closeServer();
 	//添加客户端
@@ -72,22 +58,20 @@ private:
 	//接收缓冲区
 	char szRecv[RECV_BUFF_SIZE] = {};
 	//正式客户队列
-	std::vector<ClientSocket*> g_clients;
+	std::map<SOCKET,ClientSocket*> g_clients;
 	//缓冲客户队列
 	std::vector<ClientSocket*> clientsBuffer;
 	std::mutex m;
 	std::thread* pThread;
 	CELLTimestamp tTime;
 	INetEvent* pINetEvent;
-public :
-	std::atomic_int recvCount = 0;
 };
 
 
 class TcpServer :public INetEvent
 {
 public:
-	TcpServer():s_sock(INVALID_SOCKET){}
+	TcpServer():s_sock(INVALID_SOCKET),recvCount(0),clientNum(0){}
 	virtual ~TcpServer() { closeServer(); }
 	//创建套接字
 	int initSocket();
@@ -99,11 +83,9 @@ public:
 	int acConnection();
 	//发送数据
 	int sendData(SOCKET,DataHeader *);
-	//群发消息
-	void sendToAll(DataHeader *);
 	//关闭套接字
 	void closeSocket(SOCKET);
-	void Start();
+	void Start(int = CELL_SERVER_COUNT);
 	//判断
 	bool isRun();
 	//响应消息
@@ -111,14 +93,22 @@ public:
 	bool onRun();
 	void closeServer();
 	void addClientToServer(ClientSocket*);
-	virtual void onLeave(ClientSocket*);
-	//virtual void onNetMsg(SOCKET,DataHeader *) { time4msg(); }
+	//只被一个线程调用 线程安全
+	virtual void onJoin(ClientSocket*) { ++clientNum; }
+	//可能会被多个线程调用 线程不安全
+	virtual void onLeave(ClientSocket*) { --clientNum; }
+	//可能会被多个线程调用 线程不安全
+	virtual void onNetMsg(ClientSocket *,DataHeader*) { ++recvCount; }
+protected:
+	//消息包计数
+	std::atomic_int clientNum;
+	std::atomic_int recvCount;
 private:
 	SOCKET s_sock;
-	std::vector<ClientSocket *> g_clients;
 	std::vector<CellServer *> g_servers;
+	//使用std::chrono的消息计时
 	CELLTimestamp tTime;
-	std::atomic_int recvCount = 0;
 };
 
 #endif // !_SERVER_H_
+

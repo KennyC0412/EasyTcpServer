@@ -33,7 +33,6 @@ struct Login : public DataHeader
     }
     char userName[32] = {};
     char passWord[32] = {};
-    char data[956] = {};
 
 };
 
