@@ -13,24 +13,23 @@ public:
 	//只被一个线程调用 线程安全
 	virtual void onJoin(ClientSocket*)
 	{
-		//std::cout << "client join" << std::endl; 
 		++clientNum;
 	}
 	//可能会被多个线程调用 线程不安全
 	virtual void onLeave(ClientSocket*)
 	{
-		//std::cout << "client leave" << std::endl; 
 		--clientNum;
 	}
 	//可能会被多个线程调用 线程不安全
 	virtual void onNetMsg(ClientSocket* pclient, DataHeader* dh)
 	{
-		++recvCount;
+		++msgCount;
 		switch (dh->cmd) {
 		case CMD_LOGIN:
 		{
-			//LoginResult ret;
-			//pclient->sendData(&ret);
+			Login* login = static_cast<Login*>(dh);
+			/*LoginResult ret;
+			pclient->sendData(&ret);*/
 		}
 		break;
 		case CMD_LOGOUT:
@@ -46,7 +45,7 @@ public:
 
 int main()
 {
-    TcpServer server;
+    MyServer server;
     server.initSocket();
     server.bindSocket();
     server.listenPort();

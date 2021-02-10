@@ -17,10 +17,10 @@ public:
 	int getPos() { return lastPos; }
 	void setPos(int pos) { lastPos = pos; }
 	int sendData(DataHeader*);
-	SOCKET sockfd;
 private:
-	char szMsgBuf[RECV_BUFF_SIZE * 5] = {};
+	char szMsgBuf[RECV_BUFF_SIZE * 10] = {};
 	int lastPos = 0;
+	SOCKET sockfd;
 };
 //网络事件接口
 class INetEvent 
@@ -32,6 +32,7 @@ public:
 	virtual void onLeave(ClientSocket *) = 0;
 	//客户端消息事件
 	virtual void onNetMsg(ClientSocket* ,DataHeader*) = 0;
+	virtual void onRecv(ClientSocket*) = 0;
 };
 
 class CellServer 
@@ -71,7 +72,7 @@ private:
 class TcpServer :public INetEvent
 {
 public:
-	TcpServer():s_sock(INVALID_SOCKET),recvCount(0),clientNum(0){}
+	TcpServer():s_sock(INVALID_SOCKET),recvCount(0),msgCount(0),clientNum(0){}
 	virtual ~TcpServer() { closeServer(); }
 	//创建套接字
 	int initSocket();
@@ -98,11 +99,15 @@ public:
 	//可能会被多个线程调用 线程不安全
 	virtual void onLeave(ClientSocket*) { --clientNum; }
 	//可能会被多个线程调用 线程不安全
-	virtual void onNetMsg(ClientSocket *,DataHeader*) { ++recvCount; }
+	virtual void onNetMsg(ClientSocket *,DataHeader*) { ++msgCount; }
+	virtual void onRecv(ClientSocket*) { ++recvCount; }
 protected:
-	//消息包计数
+	//客户端计数
 	std::atomic_int clientNum;
+	//recv函数计数
 	std::atomic_int recvCount;
+	//消息包计数
+	std::atomic_int msgCount;
 private:
 	SOCKET s_sock;
 	std::vector<CellServer *> g_servers;

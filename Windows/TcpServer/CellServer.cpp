@@ -7,10 +7,10 @@
 #include "server.h"
 #include <functional>
 
-bool client_change = true;
-fd_set fdRead_back;
 bool CellServer::onRun()
 {
+	fd_set fdRead_back;
+	bool client_change = true;
 	while (isRun()) {
 		if (!clientsBuffer.empty()) 
 		{	//将缓冲区的客户端加入到客户队列
@@ -27,20 +27,17 @@ bool CellServer::onRun()
 			continue;
 		}
 		fd_set fdRead;
-		//清理集合
 		FD_ZERO(&fdRead);
 		//linux下的最大描述符
 		SOCKET maxSock = g_clients.begin()->first;
-		//在每轮循环中将客户端加入监听集合
+
 		if (client_change) {
 			client_change = false;
 			for (auto iter : g_clients) {
 				FD_SET(iter.first, &fdRead);
-#ifndef _WIN32
 				if (maxSock < iter.first ){
 					maxSock = iter.first;
 				}
-#endif 
 			}
 			memcpy(&fdRead_back, &fdRead,  sizeof(fd_set));
 		}
@@ -68,6 +65,9 @@ bool CellServer::onRun()
 					g_clients.erase(iter->first);
 				}
 			}
+			else {
+				std::cout << "end of iter" <<std::endl;
+			}
 		}
 #else
 		std::vector<ClientSocket*> temp;
@@ -93,6 +93,7 @@ bool CellServer::onRun()
 int CellServer::recvData(ClientSocket* client)
 {
 	int nLen = recv(client->getSock(), szRecv, RECV_BUFF_SIZE, 0);
+	pINetEvent->onRecv(client);
 	if (nLen <= 0) {
 		return -1;
 	}
@@ -124,6 +125,9 @@ void CellServer::onNetMsg(ClientSocket *pclient ,DataHeader* dh)
 	switch (dh->cmd) {
 	case CMD_LOGIN:
 	{
+		Login* login = static_cast<Login*>(dh);
+		LoginResult ret;
+		pclient->sendData(&ret);
 	}
 	break;
 	case CMD_LOGOUT:
@@ -168,10 +172,6 @@ void CellServer::closeServer()
 	if (INVALID_SOCKET != s_sock) {
 		s_sock = INVALID_SOCKET;
 	}
-	delete pThread;
-	pThread = nullptr;
-	delete pINetEvent;
-	pINetEvent = nullptr;
 	g_clients.clear();
 }
 

@@ -5,7 +5,7 @@
 	#define WIN32_LEAN_AND_MEAN
 	#pragma comment(lib,"ws2_32.lib")
 //最大连接数
-	#define FD_SETSIZE 2501
+	#define FD_SETSIZE 10000
 	#include <Windows.h>
 	#include <WinSock2.h>
 #else
@@ -27,7 +27,7 @@
 //端口
 const short PORT = 8888;
 //监听队列
-const int BACKLOG = 4;
+const int BACKLOG = 5;
 //预定义缓冲区大小
 const int RECV_BUFF_SIZE = 10240;
 //服务器线程数

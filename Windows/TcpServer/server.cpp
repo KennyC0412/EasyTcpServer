@@ -132,7 +132,7 @@ bool TcpServer::onRun()
 			return false;
 		}
 		if (FD_ISSET(s_sock, &fdRead)) {
-			FD_CLR(s_sock, &fdRead);
+			//FD_CLR(s_sock, &fdRead);
 			acConnection();
 			return true;
 		}
@@ -178,7 +178,8 @@ void TcpServer::time4msg()
 	auto t1 = tTime.getElapsedSecond();
 	if (t1 >= 1.0) {
 		std::cout << "thread:<" << g_servers.size() << ">, time: " << "<" << t1 << "> client num:<" <<
-			clientNum << ">," << "recvCount:" << recvCount << std::endl;
+			clientNum << ">," << "msgCount:<" << static_cast<int>(msgCount/t1) <<">, recvCount:<" << static_cast<int>(recvCount / t1) << ">" <<std::endl;
+		msgCount = 0;
 		recvCount = 0;
 		tTime.update();
 	}
