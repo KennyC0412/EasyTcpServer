@@ -149,11 +149,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CellServer.cpp" />
+    <ClCompile Include="CELLTask.cpp" />
+    <ClCompile Include="clientsocket.hpp" />
     <ClCompile Include="cmdThread.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="server.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CellServer.h" />
+    <ClInclude Include="CELLTask.h" />
     <ClInclude Include="CELLtimestamp.hpp" />
     <ClInclude Include="messageHeader.h" />
     <ClInclude Include="pre.h" />

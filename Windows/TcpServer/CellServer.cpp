@@ -1,13 +1,12 @@
 #ifdef _WIN32
 #pragma once
 #endif
-#ifndef _CELLSERVER_HPP_
-#define _CELLSERVER_HPP_
 #include "pre.h"
 #include "server.h"
 #include <functional>
+#include "CellServer.h"
 
-bool CellServer::onRun()
+void CellServer::onRun()
 {
 	fd_set fdRead_back;
 	bool client_change = true;
@@ -49,7 +48,7 @@ bool CellServer::onRun()
 		if (ret < 0) {
 			std::cout << "select finished." << std::endl;
 			closeServer();
-			return false;
+			return;
 		}
 		else if (ret == 0) {
 			continue;
@@ -87,29 +86,31 @@ bool CellServer::onRun()
 		}
 #endif
 	}
-	return false;
+	return;
 }
 
 int CellServer::recvData(ClientSocket* client)
 {
-	int nLen = recv(client->getSock(), szRecv, RECV_BUFF_SIZE, 0);
+	//直接使用缓冲区来接受数据
+	char* szRecv = client->msgBuf() + client->getRecvPos();
+	int nLen = recv(client->getSock(), szRecv, RECV_BUFF_SIZE-client->getRecvPos(), 0);
 	pINetEvent->onRecv(client);
 	if (nLen <= 0) {
 		return -1;
 	}
 	//将接收到的数据拷贝到消息缓冲区
-	memcpy(client->msgBuf() + client->getPos(), szRecv, nLen);
+	//memcpy(client->msgBuf() + client->getPos(), szRecv, nLen);
 	//消息缓冲区偏移位置
-	client->setPos(client->getPos() + nLen);
-	while (client->getPos() >= sizeof(DataHeader)) {
+	client->setRecvPos(client->getRecvPos() + nLen);
+	while (client->getRecvPos() >= sizeof(DataHeader)) {
 		DataHeader* header = reinterpret_cast<DataHeader*>(client->msgBuf());
-		if (client->getPos() >= header->dataLength) {
+		if (client->getRecvPos() >= header->dataLength) {
 			//记录缓冲区中未处理数据长度
-			int sizeMark = client->getPos() - header->dataLength;
+			int sizeMark = client->getRecvPos() - header->dataLength;
 			onNetMsg(client,header);
 			//将缓冲区消息前移
 			memcpy(client->msgBuf(), client->msgBuf() + header->dataLength, sizeMark);
-			client->setPos(sizeMark);
+			client->setRecvPos(sizeMark);
 		}
 		else {
 			//剩余消息数据不够一条消息
@@ -121,13 +122,10 @@ int CellServer::recvData(ClientSocket* client)
 
 void CellServer::onNetMsg(ClientSocket *pclient ,DataHeader* dh)
 {
-    pINetEvent->onNetMsg(pclient,dh);
+    pINetEvent->onNetMsg(this,pclient,dh);
 	switch (dh->cmd) {
 	case CMD_LOGIN:
 	{
-		Login* login = static_cast<Login*>(dh);
-		LoginResult ret;
-		pclient->sendData(&ret);
 	}
 	break;
 	case CMD_LOGOUT:
@@ -145,6 +143,13 @@ void CellServer::Start()
 {
 	//mem_fn自动识别使用指针或引用进行绑定
 	pThread = new std::thread(std::mem_fn(&CellServer::onRun),this);
+	taskServer.Start();
+}
+
+void CellServer::sendTask(ClientSocket *pclient,DataHeader *dh)
+{
+	sendMsg2Client* task = new sendMsg2Client(pclient, dh);
+	taskServer.addTask(task);
 }
 
 void CellServer::addClient(ClientSocket* client)
@@ -176,4 +181,3 @@ void CellServer::closeServer()
 }
 
 
-#endif

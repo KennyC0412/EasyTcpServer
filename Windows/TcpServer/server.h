@@ -6,24 +6,13 @@
 #include "CELLtimestamp.hpp"
 #include <algorithm>
 #include <atomic>
+#include "clientsocket.hpp"
+#include "CELLTask.h"
 
-class ClientSocket
-{
-public:
-	ClientSocket(SOCKET sock):sockfd(sock){}
-	~ClientSocket(){}
-	SOCKET getSock() { return sockfd; }
-	char* msgBuf() { return szMsgBuf; }
-	int getPos() { return lastPos; }
-	void setPos(int pos) { lastPos = pos; }
-	int sendData(DataHeader*);
-private:
-	char szMsgBuf[RECV_BUFF_SIZE * 10] = {};
-	int lastPos = 0;
-	SOCKET sockfd;
-};
+class CellServer;
+
 //网络事件接口
-class INetEvent 
+class INetEvent
 {
 public:
 	//客户端加入事件
@@ -31,42 +20,10 @@ public:
 	//客户端离开事件
 	virtual void onLeave(ClientSocket *) = 0;
 	//客户端消息事件
-	virtual void onNetMsg(ClientSocket* ,DataHeader*) = 0;
+	virtual void onNetMsg(CellServer* pserver,ClientSocket* ,DataHeader*) = 0;
 	virtual void onRecv(ClientSocket*) = 0;
 };
 
-class CellServer 
-{
-public:
-	CellServer(SOCKET sock = INVALID_SOCKET) :s_sock(sock), pThread(nullptr),pINetEvent(nullptr){}
-	~CellServer() { closeServer(); }
-	//处理网络消息
-	bool onRun();
-	bool isRun() { return s_sock != INVALID_SOCKET; }
-	//接收数据
-	int recvData(ClientSocket* client);
-	//响应消息
-	void onNetMsg(ClientSocket* pclient, DataHeader* dh);
-	//关闭服务器
-	void closeServer();
-	//添加客户端
-	void addClient(ClientSocket* client);
-	void setEventObj(INetEvent* event) { pINetEvent = event; }
-	void Start();
-	size_t getClientCount() { return g_clients.size() + clientsBuffer.size(); }
-private:
-	SOCKET s_sock;
-	//接收缓冲区
-	char szRecv[RECV_BUFF_SIZE] = {};
-	//正式客户队列
-	std::map<SOCKET,ClientSocket*> g_clients;
-	//缓冲客户队列
-	std::vector<ClientSocket*> clientsBuffer;
-	std::mutex m;
-	std::thread* pThread;
-	CELLTimestamp tTime;
-	INetEvent* pINetEvent;
-};
 
 
 class TcpServer :public INetEvent
@@ -99,7 +56,7 @@ public:
 	//可能会被多个线程调用 线程不安全
 	virtual void onLeave(ClientSocket*) { --clientNum; }
 	//可能会被多个线程调用 线程不安全
-	virtual void onNetMsg(ClientSocket *,DataHeader*) { ++msgCount; }
+	virtual void onNetMsg(CellServer* pserver,ClientSocket *,DataHeader*) { ++msgCount; }
 	virtual void onRecv(ClientSocket*) { ++recvCount; }
 protected:
 	//客户端计数

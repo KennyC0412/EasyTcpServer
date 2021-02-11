@@ -1,6 +1,8 @@
 #include "server.h"
 #include "pre.h"
 #include "messageHeader.h"
+#include "clientsocket.hpp"
+#include "CellServer.h"
 
 int TcpServer::initSocket()
 {
@@ -210,9 +212,3 @@ bool TcpServer::isRun()
 	return s_sock != INVALID_SOCKET;
 }
 
-int ClientSocket::sendData(DataHeader* dh) {
-		if (dh) {
-			return send(sockfd, (const char*)dh, dh->dataLength, 0);
-		}
-		return SOCKET_ERROR;
-}

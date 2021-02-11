@@ -1,6 +1,8 @@
 #include "pre.h"
 #include "messageHeader.h"
 #include "server.h"
+#include "clientsocket.hpp"
+#include "CellServer.h"
 
 void cmdThread();
 extern bool g_bRun;
@@ -11,29 +13,29 @@ class MyServer :public TcpServer
 {
 public:
 	//只被一个线程调用 线程安全
-	virtual void onJoin(ClientSocket*)
+	virtual void onJoin(ClientSocket* client)
 	{
-		++clientNum;
+		TcpServer::onJoin(client);
 	}
 	//可能会被多个线程调用 线程不安全
-	virtual void onLeave(ClientSocket*)
+	virtual void onLeave(ClientSocket* client)
 	{
-		--clientNum;
+		TcpServer::onLeave(client);
 	}
 	//可能会被多个线程调用 线程不安全
-	virtual void onNetMsg(ClientSocket* pclient, DataHeader* dh)
+	virtual void onNetMsg(CellServer* pserver,ClientSocket* pclient, DataHeader* dh)
 	{
-		++msgCount;
+		TcpServer::onNetMsg(pserver,pclient, dh);
 		switch (dh->cmd) {
-		case CMD_LOGIN:
-		{
+		case CMD_LOGIN: {
 			Login* login = static_cast<Login*>(dh);
-			/*LoginResult ret;
-			pclient->sendData(&ret);*/
+			LoginResult *ret = new LoginResult();
+			pserver->sendTask(pclient,ret);
 		}
 		break;
 		case CMD_LOGOUT:
 		{
+
 		}
 		break;
 		default: {
