@@ -90,7 +90,8 @@ int TcpServer::acConnection()
 			return -1;
 		}
 		else {
-			addClientToServer(std::make_shared<ClientSocket>(c_sock));
+			ClientSocketPtr c(new ClientSocket(c_sock));
+			addClientToServer(c);
 			//inet_ntoa(clientAddr.sin_addr);
 		}
 		return 0;

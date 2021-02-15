@@ -12,7 +12,7 @@
 	#define xCout(...)
 #endif
 
-const int MAX_MEMORY_SIZE = 128;
+const int MAX_MEMORY_SIZE = 1024;
 
 class MemoryAlloc;
 
@@ -87,9 +87,9 @@ private:
 	MemoryManage(){
 		init(0, 64, &mem64);
 		init(65, 128, &mem128);
-		//init(129, 256, &mem256);
-		//init(257, 512, &mem512);
-		//init(513, 1024, &mem1024);
+		init(129, 256, &mem256);
+		init(257, 512, &mem512);
+		init(513, 1024, &mem1024);
 
 	}
 	~MemoryManage(){}
@@ -100,9 +100,9 @@ private:
 	void init(int, int, MemoryAlloc *);
 	MemoryAllocator<64, 1000000> mem64;
 	MemoryAllocator<128, 1000000> mem128;
-	/*MemoryAllocator<256, 100000> mem256;
+	MemoryAllocator<256, 100000> mem256;
 	MemoryAllocator<512, 100000> mem512;
-	MemoryAllocator<1024, 100000> mem1024;*/
+	MemoryAllocator<1024, 100000> mem1024;
 	MemoryAlloc* szAlloc[MAX_MEMORY_SIZE + 1];
 };
 #endif

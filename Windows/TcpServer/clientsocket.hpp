@@ -2,11 +2,11 @@
 #define _CLIENTSOCKET_HPP_
 #include "pre.h"
 #include "messageHeader.h"
-
+#include "ObjectPool.hpp"
 using DataHeaderPtr = std::shared_ptr<DataHeader>;
 
 
-class ClientSocket
+class ClientSocket:public ObjectPoolBase<ClientSocket,10000>
 {
 public:
 	ClientSocket(SOCKET sock) :sockfd(sock) {
