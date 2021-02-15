@@ -13,24 +13,24 @@ class MyServer :public TcpServer
 {
 public:
 	//只被一个线程调用 线程安全
-	virtual void onJoin(ClientSocket* client)
+	virtual void onJoin(ClientSocketPtr& client)
 	{
 		TcpServer::onJoin(client);
 	}
 	//可能会被多个线程调用 线程不安全
-	virtual void onLeave(ClientSocket* client)
+	virtual void onLeave(ClientSocketPtr& client)
 	{
 		TcpServer::onLeave(client);
 	}
 	//可能会被多个线程调用 线程不安全
-	virtual void onNetMsg(CellServer* pserver,ClientSocket* pclient, DataHeader* dh)
+	virtual void onNetMsg(CellServer* pserver, ClientSocketPtr& pclient, DataHeader * dh)
 	{
 		TcpServer::onNetMsg(pserver,pclient, dh);
 		switch (dh->cmd) {
 		case CMD_LOGIN: {
-			Login* login = static_cast<Login*>(dh);
-			LoginResult *ret = new LoginResult();
-			pserver->sendTask(pclient,ret);
+			//Login* login = static_cast<Login*>(dh);
+			DataHeaderPtr ret = std::make_shared<LoginResult>();
+			pserver->sendTask(pclient,dynamic_cast<DataHeaderPtr&>(ret));
 		}
 		break;
 		case CMD_LOGOUT:
@@ -43,6 +43,7 @@ public:
 		}
 		}
 	}
+	virtual void onRecv(ClientSocketPtr&) { ++recvCount; }
 };
 
 int main()

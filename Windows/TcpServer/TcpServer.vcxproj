@@ -148,17 +148,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Alloc.cpp" />
     <ClCompile Include="CellServer.cpp" />
     <ClCompile Include="CELLTask.cpp" />
     <ClCompile Include="clientsocket.hpp" />
     <ClCompile Include="cmdThread.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="memorypool.cpp" />
     <ClCompile Include="server.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Alloc.h" />
     <ClInclude Include="CellServer.h" />
     <ClInclude Include="CELLTask.h" />
     <ClInclude Include="CELLtimestamp.hpp" />
+    <ClInclude Include="memorypool.h" />
     <ClInclude Include="messageHeader.h" />
     <ClInclude Include="pre.h" />
     <ClInclude Include="server.h" />

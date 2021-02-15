@@ -3,6 +3,7 @@
 #include "pre.h"
 #include "messageHeader.h"
 
+using DataHeaderPtr = std::shared_ptr<DataHeader>;
 
 
 class ClientSocket
@@ -19,10 +20,10 @@ public:
 	void setRecvPos(int pos) { lastRecvPos = pos; }
 	int getSendPos() { return lastSendPos; }
 	void setSendPos(int pos) { lastSendPos = pos; }
-	int sendData(DataHeader* dh) {
+	int sendData(DataHeaderPtr& dh) {
 		int ret = SOCKET_ERROR;
 		int sendLen = dh->dataLength;
-		const char* data = reinterpret_cast<const char*>(dh);
+		const char* data = reinterpret_cast<const char*>(dh.get());
 		while (true) {
 			//发送数据超出当前缓冲区剩余大小
 			if (lastSendPos + sendLen >= SEND_BUFF_SIZE) {

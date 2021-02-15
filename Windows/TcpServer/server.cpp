@@ -90,13 +90,13 @@ int TcpServer::acConnection()
 			return -1;
 		}
 		else {
-			addClientToServer(new ClientSocket(c_sock));
+			addClientToServer(std::make_shared<ClientSocket>(c_sock));
 			//inet_ntoa(clientAddr.sin_addr);
 		}
 		return 0;
 }
 
-void TcpServer::addClientToServer(ClientSocket* client)
+void TcpServer::addClientToServer(ClientSocketPtr client)
 {
 	//寻找客户端最少的线程并添加
 	auto minServer = g_servers[0];
@@ -146,7 +146,7 @@ bool TcpServer::onRun()
 void TcpServer::Start(int tCount)
 {
 	for (int n = 0; n < tCount; ++n) {
-		auto s = new CellServer(s_sock);
+		CellServerPtr s = std::make_shared<CellServer>(s_sock);
 		g_servers.push_back(s);
 		//注册网络事件接收对象
 		s->setEventObj(this);
@@ -155,10 +155,10 @@ void TcpServer::Start(int tCount)
 	}
 }
 
-int TcpServer::sendData(SOCKET c_sock, DataHeader *dh)
+int TcpServer::sendData(SOCKET c_sock, DataHeaderPtr &dh)
 {
 	if (isRun() && dh) {
-		return  send(c_sock, (const char*)dh, dh->dataLength, 0);
+		return  send(c_sock, (const char*)dh.get(), dh->dataLength, 0);
 	}
 	return SOCKET_ERROR;
 }
@@ -190,15 +190,9 @@ void TcpServer::time4msg()
 void TcpServer::closeServer()
 {
 #ifdef _WIN32
-	for (auto s : g_servers) {
-		delete s;
-	}
 	closesocket(s_sock);
 	WSACleanup();
 #else
-	for (auto s : g_servers) {
-		delete s;
-	}
 	close(s_sock);
 #endif
 	if (INVALID_SOCKET != s_sock) {

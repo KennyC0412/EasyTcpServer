@@ -5,6 +5,7 @@
 #include "server.h"
 #include <functional>
 #include "CellServer.h"
+#include <memory>
 
 void CellServer::onRun()
 {
@@ -69,7 +70,7 @@ void CellServer::onRun()
 			}
 		}
 #else
-		std::vector<ClientSocket*> temp;
+		std::vector<ClientSocketPtr> temp;
 		for (auto iter : g_clients) {
 			if (FD_ISSET(iter.first, &fdRead)) {
 				if (-1 == recvData(iter.second)) {
@@ -89,7 +90,7 @@ void CellServer::onRun()
 	return;
 }
 
-int CellServer::recvData(ClientSocket* client)
+int CellServer::recvData(ClientSocketPtr& client)
 {
 	//直接使用缓冲区来接受数据
 	char* szRecv = client->msgBuf() + client->getRecvPos();
@@ -103,7 +104,7 @@ int CellServer::recvData(ClientSocket* client)
 	//消息缓冲区偏移位置
 	client->setRecvPos(client->getRecvPos() + nLen);
 	while (client->getRecvPos() >= sizeof(DataHeader)) {
-		DataHeader* header = reinterpret_cast<DataHeader*>(client->msgBuf());
+		DataHeader *header = reinterpret_cast<DataHeader *>(client->msgBuf());
 		if (client->getRecvPos() >= header->dataLength) {
 			//记录缓冲区中未处理数据长度
 			int sizeMark = client->getRecvPos() - header->dataLength;
@@ -120,23 +121,9 @@ int CellServer::recvData(ClientSocket* client)
 	return 0;
 }
 
-void CellServer::onNetMsg(ClientSocket *pclient ,DataHeader* dh)
+void CellServer::onNetMsg(ClientSocketPtr& pclient ,DataHeader *dh)
 {
     pINetEvent->onNetMsg(this,pclient,dh);
-	switch (dh->cmd) {
-	case CMD_LOGIN:
-	{
-	}
-	break;
-	case CMD_LOGOUT:
-	{
-		
-	}
-	break;
-	default: {
-		std::cout << "socket :" << pclient->getSock() << " receive unknow message. " << dh->dataLength << std::endl;
-	}
-	}
 }
 
 void CellServer::Start()
@@ -146,13 +133,13 @@ void CellServer::Start()
 	taskServer.Start();
 }
 
-void CellServer::sendTask(ClientSocket *pclient,DataHeader *dh)
+void CellServer::sendTask(ClientSocketPtr& pclient,DataHeaderPtr& dh)
 {
-	sendMsg2Client* task = new sendMsg2Client(pclient, dh);
-	taskServer.addTask(task);
+	sendMsg2ClientPtr task = std::make_shared<sendMsg2Client>(pclient,dh);
+	taskServer.addTask(reinterpret_cast<CellTaskPtr &>(task));
 }
 
-void CellServer::addClient(ClientSocket* client)
+void CellServer::addClient(ClientSocketPtr client)
 {
 	std::lock_guard<std::mutex> lock(m);
 	clientsBuffer.push_back(client);
@@ -163,7 +150,6 @@ void CellServer::closeServer()
 #ifdef _WIN32
 	for (auto s : g_clients) {
 		closesocket(s.first);
-		delete s.second;
 	}
 
 	closesocket(s_sock);

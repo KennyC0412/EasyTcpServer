@@ -8,6 +8,11 @@
 #include <functional>
 #include "clientsocket.hpp"
 
+using ClientSocketPtr = std::shared_ptr<ClientSocket>;
+class CellTask;
+using CellTaskPtr = std::shared_ptr<CellTask>;
+using DataHeaderPtr = std::shared_ptr<DataHeader>;
+
 //任务类型-基类
 class CellTask 
 {
@@ -35,16 +40,16 @@ public:
 
 	}
 	//添加任务
-	void addTask(CellTask *);
+	void addTask(CellTaskPtr &);
 	//启动工作线程
 	void Start();
 	//工作函数
 	void onRun();
 private:
 	//任务表
-	std::list<CellTask*> taskList;
+	std::list<CellTaskPtr> taskList;
 	//任务缓冲区
-	std::list<CellTask*> taskBuf;
+	std::list<CellTaskPtr> taskBuf;
 	//修改缓冲区时加锁
 	std::mutex mute;
 };
@@ -52,13 +57,13 @@ private:
 class sendMsg2Client :public CellTask
 {
 public:
-	sendMsg2Client(ClientSocket* client, DataHeader* dh) :pClient(client), pHeader(dh) {
+	sendMsg2Client(ClientSocketPtr& client, DataHeaderPtr& dh) :pClient(client), pHeader(dh) {
 
 	}
 	//执行任务
 	virtual void doTask();
 private:
-	ClientSocket* pClient;
-	DataHeader* pHeader;
+	ClientSocketPtr pClient;
+	DataHeaderPtr pHeader;
 };
 #endif

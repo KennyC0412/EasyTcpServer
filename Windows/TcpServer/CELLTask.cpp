@@ -1,7 +1,7 @@
 #include "CELLTask.h"
 
 
-void CellTaskServer::addTask(CellTask *task)
+void CellTaskServer::addTask(CellTaskPtr& task)
 {
 	std::lock_guard<std::mutex> lk(mute);
 	taskBuf.push_back(task);
@@ -29,10 +29,8 @@ void CellTaskServer::onRun()
 			std::this_thread::sleep_for(t);
 			continue;
 		}
-		//处理任务
 		for (auto t : taskList) {
 			t->doTask();
-			delete t;
 		}
 		//清空已完成任务
 		taskList.clear();
@@ -43,5 +41,4 @@ void CellTaskServer::onRun()
 void sendMsg2Client::doTask()
 {
 	pClient->sendData(pHeader);
-	delete pHeader;
 }
