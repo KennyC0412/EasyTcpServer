@@ -34,6 +34,8 @@ public:
 	void Start();
 	void sendTask(ClientSocketPtr& ,DataHeaderPtr &);
 	size_t getClientCount() { return g_clients.size() + clientsBuffer.size(); }
+	void readData(fd_set&);
+	void CheckTime();
 private:
 	SOCKET s_sock;
 	//正式客户队列
@@ -45,6 +47,7 @@ private:
 	CELLTimestamp tTime;
 	CellTaskServer taskServer;
 	INetEvent* pINetEvent;
+	bool client_change = true;
 };
 
 #endif

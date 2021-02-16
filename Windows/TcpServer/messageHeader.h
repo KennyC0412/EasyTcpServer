@@ -10,6 +10,8 @@ enum CMD
     CMD_LOGIN_RESULT,
     CMD_LOGOUT,
     CMD_LOGOUT_RESULT,
+    CMD_HEART_C2S,
+    CMD_HEART_S2C,
     CMD_NEW_USER_JOIN,
     CMD_ERROR
 };
@@ -73,6 +75,24 @@ struct LogoutResult : public DataHeader
         result = 0;
     }
     int result;
+};
+
+struct C2S_Heart : public DataHeader
+{
+    C2S_Heart()
+    {
+        dataLength = sizeof(C2S_Heart);
+        cmd = CMD_HEART_C2S;
+    }
+};
+
+struct S2C_Heart : public DataHeader
+{
+    S2C_Heart()
+    {
+        dataLength = sizeof(S2C_Heart);
+        cmd = CMD_HEART_S2C;
+    }
 };
 
 #endif

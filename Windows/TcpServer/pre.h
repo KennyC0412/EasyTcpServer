@@ -24,6 +24,7 @@
 #include <mutex>
 #include <map>
 
+
 //端口
 const short PORT = 8888;
 //监听队列
@@ -32,7 +33,7 @@ const int BACKLOG = 5;
 const int RECV_BUFF_SIZE = 10240 * 5;
 const int SEND_BUFF_SIZE = 10240 * 5;
 //服务器线程数
-const int CELL_SERVER_COUNT = 4;
+const int CELL_SERVER_COUNT = 2;
 #endif // !1
 
 

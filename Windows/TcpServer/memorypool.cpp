@@ -20,7 +20,7 @@ void* MemoryManage::allocMem(size_t size)
 		pRet->nRef = 1;
 		pRet->pAlloc = nullptr;
 		pRet->pNext = nullptr;
-		std::cout << pRet << "\t" << pRet->nID << "  " << size << std::endl;
+		//std::cout << pRet << "\t" << pRet->nID << "  " << size << std::endl;
 		return reinterpret_cast<char *>(pRet) + sizeof(MemoryBlock) ;
 	}
 }
@@ -92,7 +92,7 @@ void* MemoryAlloc::allocMem(size_t size)
 		pRet->nRef = 1;
 		pRet->pAlloc = this;
 		pRet->pNext = nullptr;
-		std::cout << pRet <<"\t" << pRet->nID << "  " <<size<< std::endl;
+		//std::cout << pRet <<"\t" << pRet->nID << "  " <<size<< std::endl;
 	}
 	else {//从内存池中取出一块内存
 		pRet = pHead;

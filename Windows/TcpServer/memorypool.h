@@ -3,14 +3,7 @@
 #define _MEMORYPOOL_H_
 #include <cstdlib>
 #include <mutex>
-
-
-#ifdef _DEBUG
 #include <iostream>
-	#define xCout std::cout
-#else
-	#define xCout(...)
-#endif
 
 const int MAX_MEMORY_SIZE = 1024;
 

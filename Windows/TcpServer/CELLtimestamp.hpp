@@ -7,6 +7,16 @@
 //#include <window.h>
 #include <chrono>
 
+class CELLTime
+{
+public:
+	//获取当前时间戳
+	static time_t getNowInMilliSec()
+	{
+		return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+	}
+};
+
 class CELLTimestamp
 {
 public:

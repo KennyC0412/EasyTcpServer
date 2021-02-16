@@ -28,14 +28,21 @@ public:
 		TcpServer::onNetMsg(pserver,pclient, dh);
 		switch (dh->cmd) {
 		case CMD_LOGIN: {
-			//Login* login = static_cast<Login*>(dh);
-			DataHeaderPtr ret = std::make_shared<LoginResult>();
-			pserver->sendTask(pclient,dynamic_cast<DataHeaderPtr&>(ret));
+			pclient->rstDtHeart();
+			DataHeaderPtr ret = std::make_shared<S2C_Heart>();
+			pserver->sendTask(pclient, dynamic_cast<DataHeaderPtr&>(ret));
 		}
 		break;
 		case CMD_LOGOUT:
 		{
 
+		}
+		break;
+		case CMD_HEART_C2S:
+		{
+			pclient->rstDtHeart();
+			DataHeaderPtr ret = std::make_shared<S2C_Heart>();
+			pserver->sendTask(pclient, dynamic_cast<DataHeaderPtr&>(ret));
 		}
 		break;
 		default: {

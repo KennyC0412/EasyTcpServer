@@ -30,6 +30,7 @@ private:
 
 class CellTaskServer
 {
+	using CellTask = std::function<void()>;
 public:
 	CellTaskServer()
 	{
