@@ -12,7 +12,7 @@ time_t oldTime = CELLTime::getNowInMilliSec();
 void CellServer::onRun()
 {
 	fd_set fdRead_back;
-	while (isRun()) {
+	while (isRun) {
 		if (!clientsBuffer.empty())
 		{	//将缓冲区的客户端加入到客户队列
 			std::lock_guard<std::mutex> lock(m);
@@ -48,14 +48,15 @@ void CellServer::onRun()
 		}
 		timeval t{ 0,0 };
 		int ret = select(maxSock + 1, &fdRead, nullptr, nullptr, &t);
-		if (ret < 0) {
-			std::cout << "select finished." << std::endl;
-			closeServer();
-			return;
-		}
+		//if (ret < 0) {
+		//	//std::cout << "select finished." << std::endl;
+		//	closeServer();
+		//	break;
+		//}
 		readData(fdRead);
 		CheckTime();
 	}
+	sem.wakeup();
 }
 
 
@@ -159,7 +160,9 @@ void CellServer::onNetMsg(ClientSocketPtr& pclient ,DataHeader *dh)
 void CellServer::Start()
 {
 	//mem_fn自动识别使用指针或引用进行绑定
-	pThread = new std::thread(std::mem_fn(&CellServer::onRun),this);
+	std::thread t = std::thread(std::mem_fn(&CellServer::onRun),this);
+	isRun = true;
+	t.detach();
 	taskServer.Start();
 }
 
@@ -177,16 +180,17 @@ void CellServer::addClient(ClientSocketPtr client)
 
 void CellServer::closeServer()
 {
+	taskServer.Close();
+	isRun = false;
+	sem.wait();
 #ifdef _WIN32
 	for (auto s : g_clients) {
 		closesocket(s.first);
 	}
-
 	closesocket(s_sock);
 #else
 	for (auto s : g_clients) {
 		close(s.first);
-		delete s.second;
 	}
 	close(s_sock);
 #endif

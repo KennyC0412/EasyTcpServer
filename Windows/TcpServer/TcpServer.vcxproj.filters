@@ -39,6 +39,9 @@
     <ClCompile Include="memorypool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Semaphore.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pre.h">
@@ -67,6 +70,9 @@
     </ClInclude>
     <ClInclude Include="ObjectPool.hpp">
       <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Semaphore.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -155,6 +155,7 @@
     <ClCompile Include="cmdThread.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="memorypool.cpp" />
+    <ClCompile Include="Semaphore.cpp" />
     <ClCompile Include="server.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +167,7 @@
     <ClInclude Include="messageHeader.h" />
     <ClInclude Include="ObjectPool.hpp" />
     <ClInclude Include="pre.h" />
+    <ClInclude Include="Semaphore.h" />
     <ClInclude Include="server.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

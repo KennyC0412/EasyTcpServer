@@ -7,7 +7,7 @@
 int TcpServer::initSocket()
 {
 #ifdef _WIN32
-	WORD ver = MAKEWORD(1, 7);
+	WORD ver = MAKEWORD(1, 9);
 	WSADATA dat;
 	WSAStartup(ver, &dat);
 #endif // _WIN32

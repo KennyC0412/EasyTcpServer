@@ -17,11 +17,10 @@ using DataHeaderPtr = std::shared_ptr<DataHeader>;
 class CellServer
 {
 public:
-	CellServer(SOCKET sock = INVALID_SOCKET) :s_sock(sock), pThread(nullptr), pINetEvent(nullptr) {}
-	~CellServer() { closeServer(); }
+	CellServer(SOCKET sock = INVALID_SOCKET) :s_sock(sock), /*pThread(nullptr)*/ pINetEvent(nullptr) {}
+	~CellServer() { std::cout << "CellServer Closed."<<std::endl; closeServer(); }
 	//处理网络消息
 	void onRun();
-	bool isRun() { return s_sock != INVALID_SOCKET; }
 	//接收数据
 	int recvData(ClientSocketPtr& client);
 	//响应消息
@@ -37,17 +36,19 @@ public:
 	void readData(fd_set&);
 	void CheckTime();
 private:
+	CELLTimestamp tTime;
+	CellTaskServer taskServer;
+	//std::thread* pThread;
+	INetEvent* pINetEvent;
 	SOCKET s_sock;
 	//正式客户队列
 	std::map<SOCKET, ClientSocketPtr> g_clients;
 	//缓冲客户队列
-	std::vector<ClientSocketPtr> clientsBuffer;
+	std::vector<ClientSocketPtr> clientsBuffer{};
 	std::mutex m;
-	std::thread* pThread;
-	CELLTimestamp tTime;
-	CellTaskServer taskServer;
-	INetEvent* pINetEvent;
+	Semaphore sem;
 	bool client_change = true;
+	bool isRun = false;
 };
 
 #endif

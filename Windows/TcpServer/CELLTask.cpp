@@ -9,13 +9,23 @@ void CellTaskServer::addTask(CellTaskPtr& task)
 
 void CellTaskServer::Start()
 {
+	isRun = true;
 	std::thread t(std::mem_fn(&CellTaskServer::onRun), this);
 	t.detach();
 }
 
+void CellTaskServer::Close()
+{		
+	std::cout << "Task Server Closed." << std::endl;
+	if (isRun) {
+		isRun = false;
+		sem.wait();
+	}
+}
+
 void CellTaskServer::onRun()
 {
-	while (true) {
+	while (isRun) {
 		if (!taskBuf.empty()) {
 			std::lock_guard<std::mutex> lk(mute);
 			for (auto t : taskBuf) {
@@ -35,7 +45,7 @@ void CellTaskServer::onRun()
 		//清空已完成任务
 		taskList.clear();
 	}
-	
+	sem.wakeup();
 }
 
 void sendMsg2Client::doTask()

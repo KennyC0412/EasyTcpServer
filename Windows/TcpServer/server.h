@@ -31,7 +31,7 @@ class TcpServer :public INetEvent
 {
 public:
 	TcpServer():s_sock(INVALID_SOCKET),recvCount(0),msgCount(0),clientNum(0){}
-	virtual ~TcpServer() { closeServer(); }
+	virtual ~TcpServer() { std::cout << "TcpServer Closed" << std::endl; closeServer(); }
 	//创建套接字
 	int initSocket();
 	//绑定套接字
