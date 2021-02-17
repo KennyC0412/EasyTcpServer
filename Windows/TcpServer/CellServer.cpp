@@ -179,7 +179,7 @@ void CellServer::addClient(ClientSocketPtr client)
 }
 
 void CellServer::closeServer()
-{
+{	
 	taskServer.Close();
 	isRun = false;
 	sem.wait();

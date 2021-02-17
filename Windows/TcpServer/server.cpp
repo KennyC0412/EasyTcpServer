@@ -199,7 +199,6 @@ void TcpServer::closeServer()
 	if (INVALID_SOCKET != s_sock) {
 		s_sock = INVALID_SOCKET;
 	}
-	g_servers.clear();
 }
 
 bool TcpServer::isRun()
