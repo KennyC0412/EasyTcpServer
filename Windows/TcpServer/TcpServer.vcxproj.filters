@@ -42,6 +42,9 @@
     <ClCompile Include="Semaphore.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="CELLThread.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pre.h">
@@ -72,6 +75,9 @@
       <Filter>源文件</Filter>
     </ClInclude>
     <ClInclude Include="Semaphore.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CELLThread.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -151,6 +151,7 @@
     <ClCompile Include="Alloc.cpp" />
     <ClCompile Include="CellServer.cpp" />
     <ClCompile Include="CELLTask.cpp" />
+    <ClCompile Include="CELLThread.cpp" />
     <ClCompile Include="clientsocket.hpp" />
     <ClCompile Include="cmdThread.cpp" />
     <ClCompile Include="main.cpp" />
@@ -162,6 +163,7 @@
     <ClInclude Include="Alloc.h" />
     <ClInclude Include="CellServer.h" />
     <ClInclude Include="CELLTask.h" />
+    <ClInclude Include="CELLThread.h" />
     <ClInclude Include="CELLtimestamp.hpp" />
     <ClInclude Include="memorypool.h" />
     <ClInclude Include="messageHeader.h" />

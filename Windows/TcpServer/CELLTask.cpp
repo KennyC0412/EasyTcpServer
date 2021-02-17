@@ -3,49 +3,43 @@
 
 void CellTaskServer::addTask(CellTaskPtr& task)
 {
-	std::lock_guard<std::mutex> lk(mute);
-	taskBuf.push_back(task);
+	std::lock_guard<std::mutex> lk(_mutex);
+	_taskBuf.push_back(task);
 }
 
 void CellTaskServer::Start()
 {
-	isRun = true;
-	std::thread t(std::mem_fn(&CellTaskServer::onRun), this);
-	t.detach();
+	_thread.Start(nullptr, [this](CellThread* pThread) { onRun(pThread); },nullptr);
 }
 
 void CellTaskServer::Close()
 {		
-	std::cout << "Task Server Closed." << std::endl;
-	if (isRun) {
-		isRun = false;
-		sem.wait();
-	}
+	_thread.Close();
 }
 
-void CellTaskServer::onRun()
+void CellTaskServer::onRun(CellThread * pThread)
 {
-	while (isRun) {
-		if (!taskBuf.empty()) {
-			std::lock_guard<std::mutex> lk(mute);
-			for (auto t : taskBuf) {
-				taskList.push_back(t);
+	while (pThread->Status()) {
+		if (!_taskBuf.empty()) {
+			std::lock_guard<std::mutex> lk(_mutex);
+			for (auto t : _taskBuf) {
+				_taskList.push_back(t);
 			}
-			taskBuf.clear();
+			_taskBuf.clear();
 		}
 		//无任务时等待
-		if (taskList.empty()) {
+		if (_taskList.empty()) {
 			std::chrono::milliseconds t(5);
 			std::this_thread::sleep_for(t);
 			continue;
 		}
-		for (auto t : taskList) {
+		for (auto t : _taskList) {
 			t->doTask();
 		}
 		//清空已完成任务
-		taskList.clear();
+		_taskList.clear();
 	}
-	sem.wakeup();
+	std::cout << "Task Server Closed." << std::endl;
 }
 
 void sendMsg2Client::doTask()

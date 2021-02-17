@@ -9,20 +9,20 @@
 
 time_t oldTime = CELLTime::getNowInMilliSec();
 
-void CellServer::onRun()
+void CellServer::onRun(CellThread *pThread)
 {
 	fd_set fdRead_back;
-	while (isRun) {
+	while (pThread->Status()) {
 		if (!clientsBuffer.empty())
 		{	//将缓冲区的客户端加入到客户队列
-			std::lock_guard<std::mutex> lock(m);
+			std::lock_guard<std::mutex> lock(_mutex);
 			for (auto c : clientsBuffer) {
-				g_clients[c->getSock()] = c;
+				_clients[c->getSock()] = c;
 			}
 			clientsBuffer.clear();
 			client_change = true;
 		}
-		if (g_clients.empty()) {
+		if (_clients.empty()) {
 			std::chrono::milliseconds t(5);
 			std::this_thread::sleep_for(t);
 			oldTime = CELLTime::getNowInMilliSec();
@@ -31,11 +31,11 @@ void CellServer::onRun()
 		fd_set fdRead;
 		FD_ZERO(&fdRead);
 		//linux下的最大描述符
-		SOCKET maxSock = g_clients.begin()->first;
+		SOCKET maxSock = _clients.begin()->first;
 
 		if (client_change) {
 			client_change = false;
-			for (auto iter : g_clients) {
+			for (auto iter : _clients) {
 				FD_SET(iter.first, &fdRead);
 				if (maxSock < iter.first) {
 					maxSock = iter.first;
@@ -48,15 +48,13 @@ void CellServer::onRun()
 		}
 		timeval t{ 0,0 };
 		int ret = select(maxSock + 1, &fdRead, nullptr, nullptr, &t);
-		//if (ret < 0) {
-		//	//std::cout << "select finished." << std::endl;
-		//	closeServer();
-		//	break;
-		//}
+		if (ret < 0) {
+			std::cout << "CellServer.OnRun.Select.Error" << std::endl;
+			pThread->Exit();
+		}
 		readData(fdRead);
 		CheckTime();
 	}
-	sem.wakeup();
 }
 
 
@@ -65,7 +63,7 @@ void CellServer::CheckTime()
 	time_t nowTime = CELLTime::getNowInMilliSec();
 	time_t t = nowTime - oldTime;
 	oldTime = nowTime;
-	for (auto iter = g_clients.begin(); iter != g_clients.end();) {
+	for (auto iter = _clients.begin(); iter != _clients.end();) {
 		if (iter->second->checkHeart(t)) {
 #ifdef _WIN32
 			closesocket(iter->first);
@@ -76,7 +74,7 @@ void CellServer::CheckTime()
 				pINetEvent->onLeave(iter->second);
 			client_change = true;
 			iter->second->destroyObject(iter->second.get());
-			iter =  g_clients.erase(iter++);
+			iter =  _clients.erase(iter++);
 		}
 		else {
 			iter->second->checkSend(t);
@@ -85,19 +83,38 @@ void CellServer::CheckTime()
 	}
 }
 
+void CellServer::clearClient()
+{
+#ifdef _WIN32
+	for (auto s : _clients) {
+		closesocket(s.first);
+	}
+	closesocket(s_sock);
+#else
+	for (auto s : g_clients) {
+		close(s.first);
+	}
+	close(s_sock);
+#endif
+	if (INVALID_SOCKET != s_sock) {
+		s_sock = INVALID_SOCKET;
+	}
+	_clients.clear();
+}
+
 void CellServer::readData(fd_set& fd)
 {
 #ifdef _WIN32
 	for (int i = 0; i < fd.fd_count; i++) {
-		auto iter = g_clients.find(fd.fd_array[i]);
-		if (iter != g_clients.end()) {
+		auto iter = _clients.find(fd.fd_array[i]);
+		if (iter != _clients.end()) {
 			if (-1 == recvData(iter->second)) {
 				closesocket(iter->first);
 				if (pINetEvent)
 					pINetEvent->onLeave(iter->second);
 				client_change = true;
 				iter->second->destroyObject(iter->second.get());
-				g_clients.erase(iter);
+				_clients.erase(iter);
 			}
 		}
 		else {
@@ -159,45 +176,28 @@ void CellServer::onNetMsg(ClientSocketPtr& pclient ,DataHeader *dh)
 
 void CellServer::Start()
 {
-	//mem_fn自动识别使用指针或引用进行绑定
-	std::thread t = std::thread(std::mem_fn(&CellServer::onRun),this);
-	isRun = true;
-	t.detach();
-	taskServer.Start();
+	_taskServer.Start();
+	//create run destroy
+	_thread.Start(nullptr, 
+		[this](CellThread* pThread) {onRun(pThread); },
+		[this](CellThread* pThread) {clearClient(); });
 }
 
 void CellServer::sendTask(ClientSocketPtr& pclient,DataHeaderPtr& dh)
 {
 	sendMsg2ClientPtr task = std::make_shared<sendMsg2Client>(pclient,dh);
-	taskServer.addTask(reinterpret_cast<CellTaskPtr &>(task));
+	_taskServer.addTask(reinterpret_cast<CellTaskPtr &>(task));
 }
 
 void CellServer::addClient(ClientSocketPtr client)
 {
-	std::lock_guard<std::mutex> lock(m);
+	std::lock_guard<std::mutex> lock(_mutex);
 	clientsBuffer.push_back(client);
 }
 
-void CellServer::closeServer()
+void CellServer::Close()
 {	
-	taskServer.Close();
-	isRun = false;
-	sem.wait();
-#ifdef _WIN32
-	for (auto s : g_clients) {
-		closesocket(s.first);
-	}
-	closesocket(s_sock);
-#else
-	for (auto s : g_clients) {
-		close(s.first);
-	}
-	close(s_sock);
-#endif
-	if (INVALID_SOCKET != s_sock) {
-		s_sock = INVALID_SOCKET;
-	}
-	g_clients.clear();
+	_taskServer.Close();
+	_thread.Close();
+	std::cout << "CellServer Closed." << std::endl;
 }
-
-

@@ -7,7 +7,7 @@
 #include <list>
 #include <functional>
 #include "clientsocket.hpp"
-#include "Semaphore.h"
+#include "CELLThread.h"
 
 using ClientSocketPtr = std::shared_ptr<ClientSocket>;
 class CellTask;
@@ -45,17 +45,17 @@ public:
 	void Start();
 	//关闭工作线程
 	void Close();
+protected:
 	//工作函数
-	void onRun();
+	void onRun(CellThread *);
 private:
 	//任务表
-	std::list<CellTaskPtr> taskList;
+	std::list<CellTaskPtr> _taskList;
 	//任务缓冲区
-	std::list<CellTaskPtr> taskBuf;
+	std::list<CellTaskPtr> _taskBuf;
 	//修改缓冲区时加锁
-	std::mutex mute;
-	Semaphore sem;
-	bool isRun = false;
+	std::mutex _mutex;
+	CellThread _thread;
 };
 
 class sendMsg2Client :public CellTask
