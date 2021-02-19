@@ -1,23 +1,23 @@
 #include "CELLTask.h"
 
 
-void CellTaskServer::addTask(CellTaskPtr& task)
+void CELLTaskServer::addTask(CELLTaskPtr& task)
 {
 	std::lock_guard<std::mutex> lk(_mutex);
 	_taskBuf.push_back(task);
 }
 
-void CellTaskServer::Start()
+void CELLTaskServer::Start()
 {
-	_thread.Start(nullptr, [this](CellThread* pThread) { onRun(pThread); },nullptr);
+	_thread.Start(nullptr, [this](CELLThread* pThread) { onRun(pThread); },nullptr);
 }
 
-void CellTaskServer::Close()
+void CELLTaskServer::Close()
 {		
 	_thread.Close();
 }
 
-void CellTaskServer::onRun(CellThread * pThread)
+void CELLTaskServer::onRun(CELLThread * pThread)
 {
 	while (pThread->Status()) {
 		if (!_taskBuf.empty()) {
@@ -44,5 +44,6 @@ void CellTaskServer::onRun(CellThread * pThread)
 
 void sendMsg2Client::doTask()
 {
-	pClient->sendData(pHeader);
+	pClient->writeData(pHeader);	//发送缓冲区已满 消息发送失败
+	pClient->sendData();
 }

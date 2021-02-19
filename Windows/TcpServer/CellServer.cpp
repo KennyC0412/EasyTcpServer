@@ -9,7 +9,7 @@
 
 time_t oldTime = CELLTime::getNowInMilliSec();
 
-void CellServer::onRun(CellThread *pThread)
+void CELLServer::onRun(CELLThread *pThread)
 {
 	fd_set fdRead_back;
 	while (pThread->Status()) {
@@ -29,7 +29,9 @@ void CellServer::onRun(CellThread *pThread)
 			continue;
 		}
 		fd_set fdRead;
+		fd_set fdWrite;
 		FD_ZERO(&fdRead);
+		FD_ZERO(&fdWrite);
 		//linux下的最大描述符
 		SOCKET maxSock = _clients.begin()->first;
 
@@ -46,24 +48,27 @@ void CellServer::onRun(CellThread *pThread)
 		else {
 			memcpy(&fdRead, &fdRead_back, sizeof(fd_set));
 		}
-		timeval t{ 0,0 };
-		int ret = select(maxSock + 1, &fdRead, nullptr, nullptr, &t);
+		memcpy(&fdWrite, &fdRead_back, sizeof(fd_set));
+		timeval t{ 0,1 };
+		int ret = select(maxSock + 1, &fdRead,  &fdWrite, nullptr, &t);
 		if (ret < 0) {
 			std::cout << "CellServer.OnRun.Select.Error" << std::endl;
 			pThread->Exit();
+			break;
 		}
 		readData(fdRead);
+		writeData(fdWrite);
 		CheckTime();
 	}
 }
 
-
-void CellServer::CheckTime()
+void CELLServer::CheckTime()
 {
 	time_t nowTime = CELLTime::getNowInMilliSec();
 	time_t t = nowTime - oldTime;
 	oldTime = nowTime;
 	for (auto iter = _clients.begin(); iter != _clients.end();) {
+		//心跳检测
 		if (iter->second->checkHeart(t)) {
 #ifdef _WIN32
 			closesocket(iter->first);
@@ -77,43 +82,54 @@ void CellServer::CheckTime()
 			iter =  _clients.erase(iter++);
 		}
 		else {
-			iter->second->checkSend(t);
+			//定时发送心跳检测
+			//iter->second->checkSend(t);
 			iter++;
 		}
 	}
 }
 
-void CellServer::clearClient()
+void CELLServer::ClientLeave(ClientSocketPtr client)
 {
-#ifdef _WIN32
-	for (auto s : _clients) {
-		closesocket(s.first);
+	if (pINetEvent) {
+		pINetEvent->onLeave(client);
 	}
-	closesocket(s_sock);
-#else
-	for (auto s : g_clients) {
-		close(s.first);
-	}
-	close(s_sock);
-#endif
-	if (INVALID_SOCKET != s_sock) {
-		s_sock = INVALID_SOCKET;
-	}
-	_clients.clear();
+	client_change = true;
+	client->destroyObject(client.get());
 }
 
-void CellServer::readData(fd_set& fd)
+void CELLServer::writeData(fd_set& fdWrite)
 {
 #ifdef _WIN32
-	for (int i = 0; i < fd.fd_count; i++) {
-		auto iter = _clients.find(fd.fd_array[i]);
+	for (int i = 0; i < fdWrite.fd_count; ++i) {
+		auto iter = _clients.find(fdWrite.fd_array[i]);
+		if (iter != _clients.end()) {
+			if (-1 == iter->second->sendData()) {
+				ClientLeave(iter->second);
+				_clients.erase(iter);
+			}
+		}
+	}
+#else
+	for (auto iter : g_clients) {
+		if (FD_ISSET(iter.first, &fdRead)) {
+			if (-1 == iter->second->sendData()) {
+				ClientLeave(iter->second);
+				_clients.erase(iter);
+			}
+		}
+	}
+#endif
+}
+
+void CELLServer::readData(fd_set& fdRead)
+{
+#ifdef _WIN32
+	for (int i = 0; i < fdRead.fd_count; i++) {
+		auto iter = _clients.find(fdRead.fd_array[i]);
 		if (iter != _clients.end()) {
 			if (-1 == recvData(iter->second)) {
-				closesocket(iter->first);
-				if (pINetEvent)
-					pINetEvent->onLeave(iter->second);
-				client_change = true;
-				iter->second->destroyObject(iter->second.get());
+				ClientLeave(iter->second);
 				_clients.erase(iter);
 			}
 		}
@@ -122,25 +138,19 @@ void CellServer::readData(fd_set& fd)
 		}
 	}
 #else
-	std::vector<ClientSocketPtr> temp;
 	for (auto iter : g_clients) {
 		if (FD_ISSET(iter.first, &fdRead)) {
 			if (-1 == recvData(iter.second)) {
-				close(iter->first);
-				client_change = true;
-				temp.push_back(iter.second);
-				if (pINetEvent)
-					pINetEvent->onLeave(iter.second);
+				ClientLeave(iter->second);
+				_clients.erase(iter);
 			}
 		}
 	}
-	for (auto c : temp) {
-		g_clients.erase(c->getSock());
-	}
+
 #endif
 }
 
-int CellServer::recvData(ClientSocketPtr& client)
+int CELLServer::recvData(ClientSocketPtr& client)
 {
 	//直接使用缓冲区来接受数据
 	char* szRecv = client->msgBuf() + client->getRecvPos();
@@ -169,35 +179,54 @@ int CellServer::recvData(ClientSocketPtr& client)
 	return 0;
 }
 
-void CellServer::onNetMsg(ClientSocketPtr& pclient ,DataHeader *dh)
+void CELLServer::onNetMsg(ClientSocketPtr& pclient ,DataHeader *dh)
 {
     pINetEvent->onNetMsg(this,pclient,dh);
 }
 
-void CellServer::Start()
+void CELLServer::Start()
 {
-	_taskServer.Start();
+	//_taskServer.Start();
 	//create run destroy
 	_thread.Start(nullptr, 
-		[this](CellThread* pThread) {onRun(pThread); },
-		[this](CellThread* pThread) {clearClient(); });
+		[this](CELLThread* pThread) {onRun(pThread); },
+		[this](CELLThread* pThread) {clearClient(); });
 }
 
-void CellServer::sendTask(ClientSocketPtr& pclient,DataHeaderPtr& dh)
+void CELLServer::sendTask(ClientSocketPtr& pclient,DataHeaderPtr& dh)
 {
 	sendMsg2ClientPtr task = std::make_shared<sendMsg2Client>(pclient,dh);
-	_taskServer.addTask(reinterpret_cast<CellTaskPtr &>(task));
+	_taskServer.addTask(reinterpret_cast<CELLTaskPtr &>(task));
 }
 
-void CellServer::addClient(ClientSocketPtr client)
+void CELLServer::addClient(ClientSocketPtr client)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 	clientsBuffer.push_back(client);
 }
 
-void CellServer::Close()
+void CELLServer::Close()
 {	
 	_taskServer.Close();
 	_thread.Close();
 	std::cout << "CellServer Closed." << std::endl;
+}
+
+void CELLServer::clearClient()
+{
+#ifdef _WIN32
+	for (auto s : _clients) {
+		closesocket(s.first);
+	}
+	closesocket(s_sock);
+#else
+	for (auto s : g_clients) {
+		close(s.first);
+	}
+	close(s_sock);
+#endif
+	if (INVALID_SOCKET != s_sock) {
+		s_sock = INVALID_SOCKET;
+	}
+	_clients.clear();
 }

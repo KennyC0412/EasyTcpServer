@@ -100,60 +100,54 @@ int TcpServer::acConnection()
 void TcpServer::addClientToServer(ClientSocketPtr client)
 {
 	//寻找客户端最少的线程并添加
-	auto minServer = g_servers[0];
-	for (size_t i = 1; i < g_servers.size(); ++i) {
-		if (g_servers[i]->getClientCount() < minServer->getClientCount()) {
-			minServer = g_servers[i];
+	auto minServer = _servers[0];
+	for (size_t i = 1; i < _servers.size(); ++i) {
+		if (_servers[i]->getClientCount() < minServer->getClientCount()) {
+			minServer = _servers[i];
 		}
 	}
 	onJoin(client);
 	minServer->addClient(client);
 }
 
-bool TcpServer::onRun()
+void TcpServer::onRun(CELLThread *pThread)
 {
-	while (isRun()) {
+	while (pThread->Status()) {
 		time4msg();
 		fd_set fdRead;
-		//fd_set fdWrite;
-		//fd_set fdExp;
 		//清理集合
 		FD_ZERO(&fdRead);
-		//FD_ZERO(&fdWrite);
-		//FD_ZERO(&fdExp);
 		//将描述符加入集合
 		FD_SET(s_sock, &fdRead);
-		//FD_SET(s_sock, &fdWrite);
-		//FD_SET(s_sock, &fdExp);
 		//linux下的最大描述符
 		SOCKET maxSock = s_sock;
 		timeval t{ 0,0 };
 		int ret = select(maxSock + 1, &fdRead, nullptr, nullptr, &t);
 		if (ret < 0) {
-			std::cout << "select finished." << std::endl;
-			closeServer();
-			return false;
+			std::cout << "Tcp.Server.On.Run.Select.Error." << std::endl;
+			pThread->Exit();
+			break;
 		}
 		if (FD_ISSET(s_sock, &fdRead)) {
 			//FD_CLR(s_sock, &fdRead);
 			acConnection();
-			return true;
 		}
-		return true;
 	}
-	return false;
 }
 
 void TcpServer::Start(int tCount)
 {
 	for (int n = 0; n < tCount; ++n) {
-		CellServerPtr s = std::make_shared<CellServer>(s_sock);
-		g_servers.push_back(s);
+		CELLServerPtr s = std::make_shared<CELLServer>(s_sock);
+		_servers.push_back(s);
 		//注册网络事件接收对象
 		s->setEventObj(this);
 		//启动消息处理线程
 		s->Start();
 	}
+	_thread.Start(nullptr,
+		[this](CELLThread* pThread) { onRun(pThread); }, nullptr);
+
 }
 
 int TcpServer::sendData(SOCKET c_sock, DataHeaderPtr &dh)
@@ -178,18 +172,19 @@ void TcpServer::closeSocket(SOCKET c_sock)
 //计算
 void TcpServer::time4msg()
 {
-	auto t1 = tTime.getElapsedSecond();
+	auto t1 = _tTime.getElapsedSecond();
 	if (t1 >= 1.0) {
-		std::cout << "thread:<" << g_servers.size() << ">, time: " << "<" << t1 << "> client num:<" <<
+		std::cout << "thread:<" << _servers.size() << ">, time: " << "<" << t1 << "> client num:<" <<
 			clientNum << ">," << "msgCount:<" << static_cast<int>(msgCount/t1) <<">, recvCount:<" << static_cast<int>(recvCount / t1) << ">" <<std::endl;
 		msgCount = 0;
 		recvCount = 0;
-		tTime.update();
+		_tTime.update();
 	}
 }
 
-void TcpServer::closeServer()
+void TcpServer::Close()
 {
+	std::cout << "TcpServer Closed" << std::endl;
 #ifdef _WIN32
 	closesocket(s_sock);
 	WSACleanup();

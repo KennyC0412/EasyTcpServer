@@ -1,6 +1,6 @@
 #include "CELLThread.h"
 
-void CellThread::Start(EventCall create = nullptr, EventCall run = nullptr, EventCall close = nullptr)
+void CELLThread::Start(EventCall create = nullptr, EventCall run = nullptr, EventCall close = nullptr)
 {
 	std::lock_guard<std::mutex> lk(_mutex);
 	if (create)
@@ -10,11 +10,11 @@ void CellThread::Start(EventCall create = nullptr, EventCall run = nullptr, Even
 	if (close)
 		onDestroy = close;
 	isRun = true;
-	std::thread t(std::mem_fn(&CellThread::onWork), this);
+	std::thread t(std::mem_fn(&CELLThread::onWork), this);
 	t.detach();
 }
 
-void CellThread::Close()
+void CELLThread::Close()
 {
 	std::lock_guard<std::mutex> lk(_mutex);
 	if (isRun) {
@@ -23,7 +23,7 @@ void CellThread::Close()
 	}
 }
 
-void CellThread::Exit()
+void CELLThread::Exit()
 {
 	std::lock_guard<std::mutex> lk(_mutex);
 	if (isRun) {
@@ -31,7 +31,7 @@ void CellThread::Exit()
 	}
 }
 
-void CellThread::onWork()
+void CELLThread::onWork()
 {
 	if (onCreate) {
 		onCreate(this);

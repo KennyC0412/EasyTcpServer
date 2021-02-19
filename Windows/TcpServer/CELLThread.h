@@ -8,10 +8,10 @@
 #include "Semaphore.h"
 #include <functional>
 
-class CellThread
+class CELLThread
 {
 private:
-	using EventCall = std::function<void(CellThread*)>;
+	using EventCall = std::function<void(CELLThread*)>;
 public:
 	//Æô¶¯Ïß³Ì
 	void Start(EventCall, EventCall, EventCall);

@@ -167,6 +167,7 @@
     <ClInclude Include="CELLtimestamp.hpp" />
     <ClInclude Include="memorypool.h" />
     <ClInclude Include="messageHeader.h" />
+    <ClInclude Include="MyServer.hpp" />
     <ClInclude Include="ObjectPool.hpp" />
     <ClInclude Include="pre.h" />
     <ClInclude Include="Semaphore.h" />

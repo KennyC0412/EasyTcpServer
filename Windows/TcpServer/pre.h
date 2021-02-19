@@ -33,7 +33,7 @@ const int BACKLOG = 5;
 const int RECV_BUFF_SIZE = 10240 * 5;
 const int SEND_BUFF_SIZE = 10240 * 5;
 //服务器线程数
-const int CELL_SERVER_COUNT = 2;
+const int CELL_SERVER_COUNT = 4;
 #endif // !1
 
 

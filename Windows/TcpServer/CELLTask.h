@@ -10,17 +10,17 @@
 #include "CELLThread.h"
 
 using ClientSocketPtr = std::shared_ptr<ClientSocket>;
-class CellTask;
-using CellTaskPtr = std::shared_ptr<CellTask>;
+class CELLTask;
+using CELLTaskPtr = std::shared_ptr<CELLTask>;
 using DataHeaderPtr = std::shared_ptr<DataHeader>;
 
 //任务类型-基类
-class CellTask 
+class CELLTask 
 {
 public:
-	CellTask(){
+	CELLTask(){
 	}
-	virtual ~CellTask(){
+	virtual ~CELLTask(){
 	}
 	//执行任务
 	virtual void doTask() {
@@ -29,36 +29,37 @@ private:
 	
 };
 
-class CellTaskServer
+class CELLTaskServer
 {
 public:
-	CellTaskServer()
+	CELLTaskServer()
 	{
 
 	}
-	~CellTaskServer()
+	~CELLTaskServer()
 	{
 	}
 	//添加任务
-	void addTask(CellTaskPtr &);
+	void addTask(CELLTaskPtr &);
 	//启动工作线程
 	void Start();
 	//关闭工作线程
 	void Close();
+
 protected:
 	//工作函数
-	void onRun(CellThread *);
+	void onRun(CELLThread *);
 private:
 	//任务表
-	std::list<CellTaskPtr> _taskList;
+	std::list<CELLTaskPtr> _taskList;
 	//任务缓冲区
-	std::list<CellTaskPtr> _taskBuf;
+	std::list<CELLTaskPtr> _taskBuf;
 	//修改缓冲区时加锁
 	std::mutex _mutex;
-	CellThread _thread;
+	CELLThread _thread;
 };
 
-class sendMsg2Client :public CellTask
+class sendMsg2Client :public CELLTask
 {
 public:
 	sendMsg2Client(ClientSocketPtr& client, DataHeaderPtr& dh) :pClient(client), pHeader(dh) {
