@@ -1,14 +1,14 @@
 #pragma once
 
-#ifndef _CELLSERVER_H_
-#define _CELLSERVER_H_
+#ifndef _CELL_SERVER_H_
+#define _CELL_SERVER_H_
 
 #include "pre.h"
 #include "CELLTask.h"
-#include "clientsocket.hpp"
+#include "CELLClient.h"
 #include "messageHeader.h"
 #include "CELLThread.h"
-
+#include <unordered_map>
 class CELLServer;
 class INetEvent;
 using sendMsg2ClientPtr = std::shared_ptr<sendMsg2Client>;
@@ -18,24 +18,24 @@ using DataHeaderPtr = std::shared_ptr<DataHeader>;
 class CELLServer
 {
 public:
-	CELLServer(SOCKET sock = INVALID_SOCKET) :s_sock(sock), /*pThread(nullptr)*/ pINetEvent(nullptr) {}
+	CELLServer(SOCKET sock = INVALID_SOCKET) :s_sock(sock), _pINetEvent(nullptr) {}
 	~CELLServer() { Close(); }
 	//接收数据
-	int recvData(ClientSocketPtr& client);
+	int recvData(CELLClientPtr& client);
 	//响应消息
-	void onNetMsg(ClientSocketPtr& pclient, DataHeader* dh);
+	void onNetMsg(CELLClientPtr& pclient, DataHeader* dh);
 	//关闭服务器
 	void Close();
 	//添加客户端
-	void addClient(ClientSocketPtr client);
-	void setEventObj(INetEvent* event) { pINetEvent = event; }
+	void addClient(CELLClientPtr client);
+	void setEventObj(INetEvent* event) { _pINetEvent = event; }
 	void Start();
-	void sendTask(ClientSocketPtr& ,DataHeaderPtr &);
+	void sendTask(CELLClientPtr& ,DataHeaderPtr &);
 	size_t getClientCount() { return _clients.size() + clientsBuffer.size(); }
 	void readData(fd_set&);
 	void writeData(fd_set&);
 	void CheckTime();
-	void ClientLeave(ClientSocketPtr);
+	void ClientLeave(CELLClientPtr&);
 	void clearClient();
 protected:
 	//处理网络消息
@@ -43,12 +43,12 @@ protected:
 private:
 	CELLTimestamp _tTime;
 	CELLTaskServer _taskServer;
-	INetEvent* pINetEvent;
+	INetEvent* _pINetEvent;
 	SOCKET s_sock;
 	//正式客户队列
-	std::map<SOCKET, ClientSocketPtr> _clients;
+	std::map<SOCKET, CELLClientPtr> _clients;
 	//缓冲客户队列
-	std::vector<ClientSocketPtr> clientsBuffer{};
+	std::vector<CELLClientPtr> clientsBuffer{};
 	std::mutex _mutex;
 	CELLThread _thread;
 	bool client_change = true;

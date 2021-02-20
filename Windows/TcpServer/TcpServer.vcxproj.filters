@@ -27,9 +27,6 @@
     <ClCompile Include="CellServer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="clientsocket.hpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="CELLTask.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -43,6 +40,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="CELLThread.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CELLBuffer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CELLClient.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -82,6 +85,12 @@
     </ClInclude>
     <ClInclude Include="MyServer.hpp">
       <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CELLBuffer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CELLClient.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -44,6 +44,6 @@ void CELLTaskServer::onRun(CELLThread * pThread)
 
 void sendMsg2Client::doTask()
 {
-	pClient->writeData(pHeader);	//·¢ËÍ»º³åÇøÒÑÂú ÏûÏ¢·¢ËÍÊ§°Ü
+	pClient->push(pHeader);	//·¢ËÍ»º³åÇøÒÑÂú ÏûÏ¢·¢ËÍÊ§°Ü
 	pClient->sendData();
 }

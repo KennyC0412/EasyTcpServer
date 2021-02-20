@@ -149,10 +149,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Alloc.cpp" />
+    <ClCompile Include="CELLBuffer.cpp" />
     <ClCompile Include="CellServer.cpp" />
     <ClCompile Include="CELLTask.cpp" />
     <ClCompile Include="CELLThread.cpp" />
-    <ClCompile Include="clientsocket.hpp" />
+    <ClCompile Include="CELLClient.cpp" />
     <ClCompile Include="cmdThread.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="memorypool.cpp" />
@@ -161,6 +162,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Alloc.h" />
+    <ClInclude Include="CELLBuffer.h" />
+    <ClInclude Include="CELLClient.h" />
     <ClInclude Include="CellServer.h" />
     <ClInclude Include="CELLTask.h" />
     <ClInclude Include="CELLThread.h" />

@@ -1,7 +1,7 @@
 #include "pre.h"
 #include "messageHeader.h"
 #include "server.h"
-#include "clientsocket.hpp"
+#include "CELLClient.h"
 #include "CellServer.h"
 #include "MyServer.hpp"
 

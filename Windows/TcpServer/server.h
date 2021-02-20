@@ -6,11 +6,10 @@
 #include "CELLtimestamp.hpp"
 #include <algorithm>
 #include <atomic>
-#include "clientsocket.hpp"
+#include "CELLClient.h"
 #include "CELLThread.h"
 class CELLServer;
 
-using ClientSocketPtr = std::shared_ptr<ClientSocket>;
 using CELLServerPtr = std::shared_ptr<CELLServer>;
 
 //网络事件接口
@@ -18,12 +17,12 @@ class INetEvent
 {
 public:
 	//客户端加入事件
-	virtual void onJoin(ClientSocketPtr & ) = 0;
+	virtual void onJoin(CELLClientPtr & ) = 0;
 	//客户端离开事件
-	virtual void onLeave(ClientSocketPtr &) = 0;
+	virtual void onLeave(CELLClientPtr &) = 0;
 	//客户端消息事件
-	virtual void onNetMsg(CELLServer *, ClientSocketPtr &,DataHeader *) = 0;
-	virtual void onRecv(ClientSocketPtr &) = 0;
+	virtual void onNetMsg(CELLServer *, CELLClientPtr &,DataHeader *) = 0;
+	virtual void onRecv(CELLClientPtr &) = 0;
 };
 
 
@@ -50,14 +49,14 @@ public:
 	//响应消息
 	void time4msg();
 	void Close();
-	void addClientToServer(ClientSocketPtr);
+	void addClientToServer(CELLClientPtr);
 	//只被一个线程调用 线程安全
-	virtual void onJoin(ClientSocketPtr &) { ++clientNum; }
+	virtual void onJoin(CELLClientPtr &) { ++clientNum; }
 	//可能会被多个线程调用 线程不安全
-	virtual void onLeave(ClientSocketPtr &) { --clientNum; }
+	virtual void onLeave(CELLClientPtr &) { --clientNum; }
 	//可能会被多个线程调用 线程不安全
-	virtual void onNetMsg(CELLServer *,ClientSocketPtr &,DataHeader *) { ++msgCount; }
-	virtual void onRecv(ClientSocketPtr &) { ++recvCount; }
+	virtual void onNetMsg(CELLServer *,CELLClientPtr &,DataHeader *) { ++msgCount; }
+	virtual void onRecv(CELLClientPtr &) { ++recvCount; }
 protected:
 	void onRun(CELLThread*);
 	//客户端计数

@@ -16,7 +16,7 @@ void CELLServer::onRun(CELLThread *pThread)
 		if (!clientsBuffer.empty())
 		{	//将缓冲区的客户端加入到客户队列
 			std::lock_guard<std::mutex> lock(_mutex);
-			for (auto c : clientsBuffer) {
+			for (auto  c : clientsBuffer) {
 				_clients[c->getSock()] = c;
 			}
 			clientsBuffer.clear();
@@ -28,8 +28,8 @@ void CELLServer::onRun(CELLThread *pThread)
 			oldTime = CELLTime::getNowInMilliSec();
 			continue;
 		}
-		fd_set fdRead;
-		fd_set fdWrite;
+		fd_set fdRead{};
+		fd_set fdWrite{};
 		FD_ZERO(&fdRead);
 		FD_ZERO(&fdWrite);
 		//linux下的最大描述符
@@ -37,7 +37,7 @@ void CELLServer::onRun(CELLThread *pThread)
 
 		if (client_change) {
 			client_change = false;
-			for (auto iter : _clients) {
+			for (auto & iter : _clients) {
 				FD_SET(iter.first, &fdRead);
 				if (maxSock < iter.first) {
 					maxSock = iter.first;
@@ -49,7 +49,7 @@ void CELLServer::onRun(CELLThread *pThread)
 			memcpy(&fdRead, &fdRead_back, sizeof(fd_set));
 		}
 		memcpy(&fdWrite, &fdRead_back, sizeof(fd_set));
-		timeval t{ 0,1 };
+		timeval t{ 0,0 };
 		int ret = select(maxSock + 1, &fdRead,  &fdWrite, nullptr, &t);
 		if (ret < 0) {
 			std::cout << "CellServer.OnRun.Select.Error" << std::endl;
@@ -75,8 +75,8 @@ void CELLServer::CheckTime()
 #else
 			close(iter->first);
 #endif
-			if (pINetEvent)
-				pINetEvent->onLeave(iter->second);
+			if (_pINetEvent)
+				_pINetEvent->onLeave(iter->second);
 			client_change = true;
 			iter->second->destroyObject(iter->second.get());
 			iter =  _clients.erase(iter++);
@@ -89,10 +89,10 @@ void CELLServer::CheckTime()
 	}
 }
 
-void CELLServer::ClientLeave(ClientSocketPtr client)
+void CELLServer::ClientLeave(CELLClientPtr& client)
 {
-	if (pINetEvent) {
-		pINetEvent->onLeave(client);
+	if (_pINetEvent) {
+		_pINetEvent->onLeave(client);
 	}
 	client_change = true;
 	client->destroyObject(client.get());
@@ -138,9 +138,9 @@ void CELLServer::readData(fd_set& fdRead)
 		}
 	}
 #else
-	for (auto iter : g_clients) {
-		if (FD_ISSET(iter.first, &fdRead)) {
-			if (-1 == recvData(iter.second)) {
+	for (auto iter = _clients.begin(); iter != _clients.end();) {
+		if (FD_ISSET(iter->first, &fdRead)) {
+			if (-1 == recvData(iter->second)) {
 				ClientLeave(iter->second);
 				_clients.erase(iter);
 			}
@@ -150,38 +150,28 @@ void CELLServer::readData(fd_set& fdRead)
 #endif
 }
 
-int CELLServer::recvData(ClientSocketPtr& client)
+int CELLServer::recvData(CELLClientPtr& client)
 {
-	//直接使用缓冲区来接受数据
-	char* szRecv = client->msgBuf() + client->getRecvPos();
-	int nLen = recv(client->getSock(), szRecv, RECV_BUFF_SIZE-client->getRecvPos(), 0);
-	pINetEvent->onRecv(client);
+	//接收客户端数据
+	int nLen = client.get()->recvData();
 	if (nLen <= 0) {
 		return -1;
 	}
-	//消息缓冲区偏移位置
-	client->setRecvPos(client->getRecvPos() + nLen);
-	while (client->getRecvPos() >= sizeof(DataHeader)) {
-		DataHeader *header = reinterpret_cast<DataHeader *>(client->msgBuf());
-		if (client->getRecvPos() >= header->dataLength) {
-			//记录缓冲区中未处理数据长度
-			int sizeMark = client->getRecvPos() - header->dataLength;
-			onNetMsg(client,header);
-			//将缓冲区消息前移
-			memcpy(client->msgBuf(), client->msgBuf() + header->dataLength, sizeMark);
-			client->setRecvPos(sizeMark);
-		}
-		else {
-			//剩余消息数据不够一条消息
-			break;
-		}
+	//触发接受网络数据计数事件
+	_pINetEvent->onRecv(client);
+	//循环检查是否有消息待处理
+	while (client.get()->hasMsg()) {
+		//处理消息
+		onNetMsg(client, client.get()->front_Msg());
+		//移除缓冲区头部消息
+		client.get()->pop_front_Msg();
 	}
-	return 0;
+	return nLen;
 }
 
-void CELLServer::onNetMsg(ClientSocketPtr& pclient ,DataHeader *dh)
+void CELLServer::onNetMsg(CELLClientPtr& pclient ,DataHeader *dh)
 {
-    pINetEvent->onNetMsg(this,pclient,dh);
+    _pINetEvent->onNetMsg(this,pclient,dh);
 }
 
 void CELLServer::Start()
@@ -193,13 +183,13 @@ void CELLServer::Start()
 		[this](CELLThread* pThread) {clearClient(); });
 }
 
-void CELLServer::sendTask(ClientSocketPtr& pclient,DataHeaderPtr& dh)
+void CELLServer::sendTask(CELLClientPtr& pclient,DataHeaderPtr& dh)
 {
 	sendMsg2ClientPtr task = std::make_shared<sendMsg2Client>(pclient,dh);
 	_taskServer.addTask(reinterpret_cast<CELLTaskPtr &>(task));
 }
 
-void CELLServer::addClient(ClientSocketPtr client)
+void CELLServer::addClient(CELLClientPtr client)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 	clientsBuffer.push_back(client);
@@ -215,7 +205,7 @@ void CELLServer::Close()
 void CELLServer::clearClient()
 {
 #ifdef _WIN32
-	for (auto s : _clients) {
+	for (auto &s : _clients) {
 		closesocket(s.first);
 	}
 	closesocket(s_sock);

@@ -6,13 +6,12 @@
 #include <mutex>
 #include <list>
 #include <functional>
-#include "clientsocket.hpp"
+#include "CELLClient.h"
 #include "CELLThread.h"
 
-using ClientSocketPtr = std::shared_ptr<ClientSocket>;
+using CELLClientPtr = std::shared_ptr<CELLClient>;
 class CELLTask;
 using CELLTaskPtr = std::shared_ptr<CELLTask>;
-using DataHeaderPtr = std::shared_ptr<DataHeader>;
 
 //任务类型-基类
 class CELLTask 
@@ -62,13 +61,13 @@ private:
 class sendMsg2Client :public CELLTask
 {
 public:
-	sendMsg2Client(ClientSocketPtr& client, DataHeaderPtr& dh) :pClient(client), pHeader(dh) {
+	sendMsg2Client(CELLClientPtr& client, DataHeaderPtr& dh) :pClient(client), pHeader(dh) {
 
 	}
 	//执行任务
 	virtual void doTask();
 private:
-	ClientSocketPtr pClient;
+	CELLClientPtr pClient;
 	DataHeaderPtr pHeader;
 };
 #endif

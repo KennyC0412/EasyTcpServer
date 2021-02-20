@@ -1,7 +1,7 @@
 #include "server.h"
 #include "pre.h"
 #include "messageHeader.h"
-#include "clientsocket.hpp"
+#include "CELLClient.h"
 #include "CellServer.h"
 
 int TcpServer::initSocket()
@@ -90,14 +90,14 @@ int TcpServer::acConnection()
 			return -1;
 		}
 		else {
-			ClientSocketPtr c(new ClientSocket(c_sock));
+			CELLClientPtr c(new CELLClient(c_sock));
 			addClientToServer(c);
 			//inet_ntoa(clientAddr.sin_addr);
 		}
 		return 0;
 }
 
-void TcpServer::addClientToServer(ClientSocketPtr client)
+void TcpServer::addClientToServer(CELLClientPtr client)
 {
 	//寻找客户端最少的线程并添加
 	auto minServer = _servers[0];

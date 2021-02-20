@@ -4,6 +4,8 @@
 #ifndef _MESSAGEHEADER_H_
 #define _MESSAGEHEADER_H_
 
+#include <memory>
+
 enum CMD
 {
     CMD_LOGIN,
@@ -26,6 +28,8 @@ struct DataHeader
     short dataLength;
     short cmd;
 };
+using DataHeaderPtr = std::shared_ptr<DataHeader>;
+
 //DataPackage
 struct Login : public DataHeader
 {
