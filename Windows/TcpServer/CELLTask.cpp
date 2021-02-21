@@ -1,7 +1,13 @@
 #include "CELLTask.h"
+#include "CELLLog.h"
 
+//void CELLTaskServer::addTask(CELLTaskPtr& task)
+//{
+//	std::lock_guard<std::mutex> lk(_mutex);
+//	_taskBuf.push_back(task);
+//}
 
-void CELLTaskServer::addTask(CELLTaskPtr& task)
+void CELLTaskServer::addTask(std::function<void()> task)
 {
 	std::lock_guard<std::mutex> lk(_mutex);
 	_taskBuf.push_back(task);
@@ -13,7 +19,8 @@ void CELLTaskServer::Start()
 }
 
 void CELLTaskServer::Close()
-{		
+{
+	CELLLog::Info("Task Server Closed.");
 	_thread.Close();
 }
 
@@ -33,13 +40,17 @@ void CELLTaskServer::onRun(CELLThread * pThread)
 			std::this_thread::sleep_for(t);
 			continue;
 		}
+		//做任务
 		for (auto t : _taskList) {
-			t->doTask();
+			t();
 		}
 		//清空已完成任务
 		_taskList.clear();
 	}
-	std::cout << "Task Server Closed." << std::endl;
+	//将结束时还在缓冲队列的任务完成
+	for (auto t : _taskBuf) {
+		t();
+	}
 }
 
 void sendMsg2Client::doTask()

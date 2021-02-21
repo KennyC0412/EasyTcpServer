@@ -2,6 +2,7 @@
 #include "pre.h"
 #include "messageHeader.h"
 #include "server.h"
+#include "CELLLog.h"
 
 bool g_bRun = true;
 
@@ -11,12 +12,12 @@ void cmdThread()
 		char cmdBuf[256];
 		std::cin >> cmdBuf;
 		if (0 == strcmp(cmdBuf, "exit")) {
-			std::cout << "cmd thread quit." << std::endl;
+			CELLLog::Info("cmd thread quit.");
 			g_bRun = false;
 			break;
 		}
 		else {
-			std::cout << "Wrong command.please input again:";
+			CELLLog::Info("Wrong command.please input again");
 		}
 	}
 }

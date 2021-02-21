@@ -6,6 +6,7 @@
 #include <functional>
 #include "CellServer.h"
 #include <memory>
+#include "CELLLog.h"
 
 time_t oldTime = CELLTime::getNowInMilliSec();
 
@@ -52,9 +53,8 @@ void CELLServer::onRun(CELLThread *pThread)
 		timeval t{ 0,0 };
 		int ret = select(maxSock + 1, &fdRead,  &fdWrite, nullptr, &t);
 		if (ret < 0) {
-			std::cout << "CellServer.OnRun.Select.Error" << std::endl;
+			CELLLog::Error("CellServer.OnRun.Select.Error");
 			pThread->Exit();
-			break;
 		}
 		readData(fdRead);
 		writeData(fdWrite);
@@ -83,7 +83,7 @@ void CELLServer::CheckTime()
 		}
 		else {
 			//定时发送心跳检测
-			//iter->second->checkSend(t);
+			iter->second->checkSend(t);
 			iter++;
 		}
 	}
@@ -134,7 +134,7 @@ void CELLServer::readData(fd_set& fdRead)
 			}
 		}
 		else {
-			std::cout << "end of iter" << std::endl;
+			CELLLog::Error("end of iter");
 		}
 	}
 #else
@@ -185,8 +185,8 @@ void CELLServer::Start()
 
 void CELLServer::sendTask(CELLClientPtr& pclient,DataHeaderPtr& dh)
 {
-	sendMsg2ClientPtr task = std::make_shared<sendMsg2Client>(pclient,dh);
-	_taskServer.addTask(reinterpret_cast<CELLTaskPtr &>(task));
+	/*sendMsg2ClientPtr task = std::make_shared<sendMsg2Client>(pclient,dh);
+	_taskServer.addTask(reinterpret_cast<CELLTaskPtr &>(task));*/
 }
 
 void CELLServer::addClient(CELLClientPtr client)
@@ -198,8 +198,9 @@ void CELLServer::addClient(CELLClientPtr client)
 void CELLServer::Close()
 {	
 	_taskServer.Close();
-	_thread.Close();
-	std::cout << "CellServer Closed." << std::endl;
+	_thread.Close();	
+	CELLLog::Info("CellServer Closed.");
+
 }
 
 void CELLServer::clearClient()

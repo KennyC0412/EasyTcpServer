@@ -8,7 +8,7 @@
 #include "CELLClient.h"
 #include "messageHeader.h"
 #include "CELLThread.h"
-#include <unordered_map>
+
 class CELLServer;
 class INetEvent;
 using sendMsg2ClientPtr = std::shared_ptr<sendMsg2Client>;

@@ -1,8 +1,9 @@
-#ifndef _MY_SERVER_H_
-#define _MY_SERVER_H_
+#ifndef _MY_SERVER_HPP_
+#define _MY_SERVER_HPP_
 
 #include "server.h"
 #include "CellServer.h"
+#include "CELLLog.h"
 
 //用户自定义server
 class MyServer :public TcpServer
@@ -28,7 +29,7 @@ public:
 			DataHeaderPtr ret = std::make_shared<S2C_Heart>();
 			//pserver->sendTask(pclient, dynamic_cast<DataHeaderPtr&>(ret));*/
 			if (SOCKET_ERROR == pclient->push(ret)) {
-				std::cout << "Buffer full\t";
+				CELLLog::Error("Buffer Full!");
 			}
 		}
 		break;
@@ -45,7 +46,7 @@ public:
 		}
 		break;
 		default: {
-			std::cout << "socket :" << pclient->getSock() << " receive unknow message. " << dh->dataLength << std::endl;
+			CELLLog::Info("socket :", pclient->getSock(), " receive unknow message. ", dh->dataLength);
 		}
 		}
 	}

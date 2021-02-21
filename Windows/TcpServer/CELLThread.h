@@ -20,7 +20,7 @@ public:
 	//返回运行状态
 	 bool Status() { return isRun; }
 	 //异常退出
-	 void 	Exit();
+	 void Exit();
 protected:
 	void onWork();
 private:

@@ -39,7 +39,8 @@ public:
 	{
 	}
 	//添加任务
-	void addTask(CELLTaskPtr &);
+	//void addTask(CELLTaskPtr &);
+	void addTask(std::function<void()>);
 	//启动工作线程
 	void Start();
 	//关闭工作线程
@@ -50,9 +51,9 @@ protected:
 	void onRun(CELLThread *);
 private:
 	//任务表
-	std::list<CELLTaskPtr> _taskList;
+	std::list<std::function<void()>> _taskList;
 	//任务缓冲区
-	std::list<CELLTaskPtr> _taskBuf;
+	std::list<std::function<void()>> _taskBuf;
 	//修改缓冲区时加锁
 	std::mutex _mutex;
 	CELLThread _thread;

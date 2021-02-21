@@ -2,6 +2,17 @@
 
 bool CELLBuffer::push(const char*pData, int sendLen)
 {
+	////根据业务需求拓展
+	//if (_lastPos + sendLen > _nSize) {
+	//	//需要写入数据大于缓冲区可用空间
+	//	int n = (_lastPos + sendLen) - _nSize;
+	//	if (n < 8192)
+	//		n = 8192;
+	//	char* buff = new char[_nSize + n];
+	//	memcpy(buff, _BufPtr, _nSize);
+	//	delete[]_BufPtr;
+	//	_BufPtr = buff;
+	//}
 	if (_lastPos + sendLen <= _nSize) {
 		//拷贝接收数据到发送缓冲区
 		memcpy(_BufPtr + _lastPos, pData, sendLen);

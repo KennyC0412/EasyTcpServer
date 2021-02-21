@@ -11,6 +11,7 @@ extern bool g_bRun;
 
 int main()
 {
+    CELLLog::getInstance().setLogPath("temp\\serverLog.txt", 'w');
     MyServer server;
     server.initSocket();
     server.bindSocket();
@@ -22,6 +23,7 @@ int main()
 		std::chrono::milliseconds t(6000);
 		std::this_thread::sleep_for(t);
 	}
+    Sleep(50);
     return 0;
 }
 

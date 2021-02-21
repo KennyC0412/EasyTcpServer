@@ -8,6 +8,7 @@
 #include <atomic>
 #include "CELLClient.h"
 #include "CELLThread.h"
+
 class CELLServer;
 
 using CELLServerPtr = std::shared_ptr<CELLServer>;
