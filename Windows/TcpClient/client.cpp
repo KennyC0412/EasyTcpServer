@@ -1,172 +1,128 @@
 #include "client.h"
 #include "messageHeader.h"
 #include "pre.h"
+#include "CELLtimestamp.hpp"
+#include "NetEnvMan.h"
+#include "CELLLog.h"
 
 TcpClient* client[cCount];
 
 int TcpClient::initSocket() 
 {
-#ifdef _WIN32
-	//建立windows socket环境
-	WORD ver = MAKEWORD(1, 7);
-	WSADATA dat;
-	WSAStartup(ver, &dat);
-#endif
-	//如果有旧socket存在，关闭它
-	if (INVALID_SOCKET != c_sock) {
-		closeSocket();
+	NetEnv::init();
+	if (_client) {
+		CELLLog::Info("close old socket<", _client->getSock(), ">");
+		_client.reset();
 	}
 	//创建socket
-	c_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	memory = c_sock;
+	SOCKET c_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (INVALID_SOCKET == c_sock) {
-		std::cerr << "Failed to create socket." << std::endl;
-		closeSocket();
+		CELLLog::Error("Failed to create socket.");
+		Close();
 		return -1;
 	}
 	else {
+		_client = std::make_shared<CELLClient>(c_sock);
 		isConnect = true;
 	}
 	return 0;
 }
 
 int TcpClient::connServer(const char *ip,short port)
-{
+{	
+	//如果还未创建有效套接字，初始化一个套接字
+	if ( _client == nullptr) {
+		initSocket();
+	}
+	sockaddr_in _sin;
 	memset(&_sin, 0, sizeof(_sin));
 	_sin.sin_family = AF_INET;
-	_sin.sin_port = htons(net::PORT);
+	_sin.sin_port = htons(port);
 #ifdef WIN32
 	_sin.sin_addr.S_un.S_addr = inet_addr(ip);
 #else
 	_sin.sin_addr.s_addr = inet_addr(IP);
 #endif
-	//如果还未创建有效套接字，初始化一个套接字
-	if (INVALID_SOCKET == c_sock) {
-		initSocket();
+	int ret = connect(_client->getSock(), (const sockaddr*)&_sin, sizeof(sockaddr_in));
+	if (-1 == ret) {
+		CELLLog::Error("Failed to connect server.");
+		Close();
 	}
-	if (-1 == connect(c_sock, (const sockaddr*)&_sin, sizeof(sockaddr_in))) {
-		std::cerr << "Failed to connect server." << std::endl;
-		closeSocket();
-		return -1;
+	else {
+		isConnect == true;
 	}
-	return 0;
+	return ret;
 }
 
-//接收数据 处理粘包 拆分包
-int TcpClient::recvData(SOCKET sock)
+int TcpClient::readData()
 {
-	int nLen = recv(c_sock, szRecv, RECV_BUFF_SIZE, 0);
-	if (nLen <= 0) {
-		std::cout << "Connection closed." << std::endl;
-		return -1;
+	 int nLen = _client->recvData();
+	 if (nLen <= 0) {
+		 return -1;
+	 }
+	 while (_client->hasMsg()) {
+		 onNetMsg(_client->front_Msg());
+		 _client->pop_front_Msg();
 	}
-	//将接收到的数据拷贝到消息缓冲区
-	memcpy(szMsgBuf + lastPos, szRecv, nLen);
-	//消息缓冲区偏移位置
-	lastPos += nLen;
-	while (lastPos >= sizeof(DataHeader))
-	{
-		DataHeader* header = reinterpret_cast<DataHeader*>(szMsgBuf);
-		//判断消息缓冲区数据长度大于消息长度
-		if (lastPos >= header->dataLength) {
-			//记录缓冲区中未处理数据长度
-			int sizeMark = lastPos - header->dataLength;
-			onNetMsg(header);
-			//将缓冲区消息前移
-			memcpy(szMsgBuf, szMsgBuf + header->dataLength, sizeMark);
-			lastPos = sizeMark;
-		}
-		else {
-			//剩余消息数据不够一条消息
-			break;
-		}
-	}
-	return 0;
+	 return nLen;
 }
 
 
-void TcpClient::onNetMsg(DataHeader* dh)
+
+int TcpClient::writeData(DataHeaderPtr& dh)
 {
-	switch (dh->cmd) {
-	case CMD_LOGIN_RESULT:
-	{
-		LoginResult* loginResult = static_cast<LoginResult*>(dh);
-		std::cout << "receive:CMD_LOGIN_RESULT from server result:" << loginResult->result << "\tdata length:" << loginResult->dataLength << std::endl;
-	}
-	break;
-	case CMD_LOGOUT_RESULT:
-	{
-		LogoutResult* logoutResult = static_cast<LogoutResult*>(dh);
-		std::cout << "receive:CMD_LOGOUT_RESULT from server. result:" << logoutResult->result << "\tdata length:" << logoutResult->dataLength << std::endl;
-	}
-	break;
-	case CMD_NEW_USER_JOIN:
-	{
-		NewUserJoin* newUser = static_cast<NewUserJoin*>(dh);
-		std::cout << "receive:CMD_NEW_USER_JOIN from server. New user's socket:" << newUser->sock << "\tdata length:" << newUser->dataLength << std::endl;
-	}break;
-	case CMD_ERROR:
-	{
-		std::cout << "receive:CMD_ERROR from server. "  << "\tdata length:" << dh->dataLength << std::endl;
-	}
-	default:
-		std::cout << "socket :" <<c_sock <<" receive unknow message. "<< dh->dataLength << std::endl;
-	}
+	return _client->push(dh);
 }
 
-int TcpClient::sendData(DataHeader *dh,int len)
+void TcpClient::onRun()
 {
-	if (isRun() && dh) {
-		return send(c_sock, (const char*)dh, len, 0);
-	}
-	return SOCKET_ERROR;
-}
-
-bool TcpClient::onRun()
-{
+	SOCKET sock = _client->getSock();
 	if (isRun()) {
 		//初始化
 		fd_set fdRead;
+		fd_set fdWrite;
+
 		FD_ZERO(&fdRead);
-		FD_SET(c_sock, &fdRead);
-		//设置最大标识符
+		FD_ZERO(&fdWrite);
+
+		FD_SET(sock, &fdRead);
 		timeval t{ 0,0 };
-		if (0 > select(c_sock + 1, &fdRead, 0, 0, &t)) {
-			std::cout << "Socket: " << memory << " select task finished." << std::endl;
-			closeSocket();
-			return false;
+		int ret = 0;
+		if (_client->needWrite()) {
+			FD_SET(sock, &fdWrite);
+			ret = select(sock + 1, &fdRead, &fdWrite, nullptr, &t);
 		}
-		if (FD_ISSET(c_sock, &fdRead)) {
-			FD_CLR(c_sock, &fdRead);
-			if (-1 == recvData(c_sock)) {
-				std::cout << "Socket: " << memory << " select task finished." << std::endl;
-				closeSocket();
-				return false;
+		else {
+			ret = select(sock + 1, &fdRead, nullptr, nullptr, &t);
+		}
+		if (ret < 0) {
+			CELLLog::Info("Socket: ", sock, " select task finished.");
+			Close();
+		}
+		if (FD_ISSET(sock, &fdRead)) {
+			if (-1 == readData()) {
+				CELLLog::Error("Receive fault.");
+				Close();
 			}
 		}
-		return true;
+		if (FD_ISSET(sock, &fdWrite)) {
+			if (-1 == _client->sendData()) {
+				CELLLog::Error("Write fault.");
+				Close();
+			}
+		}
 	}
-	return false;
 }
 
 
 bool TcpClient::isRun()
 {
-	return c_sock != INVALID_SOCKET;
+	return _client && isConnect;
 }
 
-void TcpClient::closeSocket()
+
+void TcpClient::Close()
 {
-#ifdef _WIN32
-	closesocket(c_sock);
-	if(INVALID_SOCKET != c_sock)
-	c_sock = INVALID_SOCKET;
-	//清除windows socket环境
-	WSACleanup();
-#else
-	close(c_sock);
-	if (INVALID_SOCKET != c_sock)
-	c_sock = INVALID_SOCKET;
-#endif
+	isConnect = false;
 }
 

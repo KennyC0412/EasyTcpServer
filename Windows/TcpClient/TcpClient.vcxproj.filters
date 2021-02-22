@@ -21,6 +21,30 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="MyClient.hpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CELLBuffer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CELLClient.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CELLLog.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CELLTask.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CELLThread.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="NetEnvMan.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Semaphore.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="Thread.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -32,7 +56,28 @@
     <ClInclude Include="client.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="CELLBuffer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CELLClient.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CELLLog.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CELLTask.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CELLThread.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="messageHeader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="NetEnvMan.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Semaphore.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="CELLtimestamp.hpp">
