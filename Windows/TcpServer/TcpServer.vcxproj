@@ -155,9 +155,9 @@
     <ClCompile Include="CELLTask.cpp" />
     <ClCompile Include="CELLThread.cpp" />
     <ClCompile Include="CELLClient.cpp" />
-    <ClCompile Include="cmdThread.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="memorypool.cpp" />
+    <ClCompile Include="NetEnvMan.cpp" />
     <ClCompile Include="Semaphore.cpp" />
     <ClCompile Include="server.cpp" />
   </ItemGroup>
@@ -173,6 +173,7 @@
     <ClInclude Include="memorypool.h" />
     <ClInclude Include="messageHeader.h" />
     <ClInclude Include="MyServer.hpp" />
+    <ClInclude Include="NetEnvMan.h" />
     <ClInclude Include="ObjectPool.hpp" />
     <ClInclude Include="pre.h" />
     <ClInclude Include="Semaphore.h" />

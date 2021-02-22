@@ -4,9 +4,7 @@
 #include "CELLClient.h"
 #include "CellServer.h"
 #include "MyServer.hpp"
-
-void cmdThread();
-extern bool g_bRun;
+#include "NetEnvMan.h"
 
 
 int main()
@@ -17,13 +15,17 @@ int main()
     server.bindSocket();
     server.listenPort();
     server.Start();
-    std::thread t(cmdThread);
-	t.detach();
-	while (server.isRun() && g_bRun) {
-		std::chrono::milliseconds t(6000);
-		std::this_thread::sleep_for(t);
+	while (true) {
+		char cmdBuf[256];
+		std::cin >> cmdBuf;
+		if (0 == strcmp(cmdBuf, "exit")) {
+			CELLLog::Info("cmd thread quit.");
+			break;
+		}
+		else {
+			CELLLog::Info("Wrong command.please input again");
+		}
 	}
-    Sleep(50);
     return 0;
 }
 

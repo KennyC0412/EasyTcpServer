@@ -4,13 +4,10 @@
 #include "CELLClient.h"
 #include "CellServer.h"
 #include "CELLLog.h"
+#include "NetEnvMan.h"
 int TcpServer::initSocket()
 {
-#ifdef _WIN32
-	WORD ver = MAKEWORD(2,0);
-	WSADATA dat;
-	WSAStartup(ver, &dat);
-#endif // _WIN32
+	NetEnv::init();
 	//如果有旧socket存在，关闭它
 	if (INVALID_SOCKET != s_sock) {
 		closeSocket(s_sock);
@@ -188,7 +185,6 @@ void TcpServer::Close()
 	CELLLog::Info("TcpServer Closed.");
 #ifdef _WIN32
 	closesocket(s_sock);
-	WSACleanup();
 #else
 	close(s_sock);
 #endif

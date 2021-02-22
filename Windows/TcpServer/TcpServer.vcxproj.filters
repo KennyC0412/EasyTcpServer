@@ -21,9 +21,6 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="cmdThread.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="CellServer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -49,6 +46,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="CELLLog.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="NetEnvMan.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -96,6 +96,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="CELLLog.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="NetEnvMan.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
