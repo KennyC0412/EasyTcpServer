@@ -150,6 +150,7 @@
     <ClCompile Include="CELLBuffer.cpp" />
     <ClCompile Include="CELLClient.cpp" />
     <ClCompile Include="CELLLog.cpp" />
+    <ClCompile Include="CELLStream.cpp" />
     <ClCompile Include="CELLTask.cpp" />
     <ClCompile Include="CELLThread.cpp" />
     <ClCompile Include="client.cpp" />
@@ -163,6 +164,8 @@
     <ClInclude Include="CELLBuffer.h" />
     <ClInclude Include="CELLClient.h" />
     <ClInclude Include="CELLLog.h" />
+    <ClInclude Include="CELLMsgStream.hpp" />
+    <ClInclude Include="CELLStream.h" />
     <ClInclude Include="CELLTask.h" />
     <ClInclude Include="CELLThread.h" />
     <ClInclude Include="CELLtimestamp.hpp" />

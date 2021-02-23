@@ -41,7 +41,7 @@ int TcpClient::connServer(const char *ip,short port)
 #ifdef WIN32
 	_sin.sin_addr.S_un.S_addr = inet_addr(ip);
 #else
-	_sin.sin_addr.s_addr = inet_addr(IP);
+	_sin.sin_addr.s_addr = inet_addr(ip);
 #endif
 	int ret = connect(_client->getSock(), (const sockaddr*)&_sin, sizeof(sockaddr_in));
 	if (-1 == ret) {
@@ -103,12 +103,14 @@ void TcpClient::onRun()
 			if (-1 == readData()) {
 				CELLLog::Error("Receive fault.");
 				Close();
+				return;
 			}
 		}
 		if (FD_ISSET(sock, &fdWrite)) {
 			if (-1 == _client->sendData()) {
 				CELLLog::Error("Write fault.");
 				Close();
+				return;
 			}
 		}
 	}

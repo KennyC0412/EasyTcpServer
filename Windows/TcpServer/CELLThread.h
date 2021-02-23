@@ -21,6 +21,12 @@ public:
 	 bool Status() { return isRun; }
 	 //Òì³£ÍË³ö
 	 void Exit();
+	 //ÐÝÃß
+	 void Sleep(time_t dt)
+	 {
+		 std::chrono::milliseconds time(dt);
+		 std::this_thread::sleep_for(time);
+	 }
 protected:
 	void onWork();
 private:

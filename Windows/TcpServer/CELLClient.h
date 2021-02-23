@@ -7,8 +7,8 @@
 
 #include "pre.h"
 #include "messageHeader.h"
-#include "ObjectPool.hpp"
 #include "CELLBuffer.h"
+#include "ObjectPool.hpp"
 
 //心跳检测时间
 #define CLIENT_HEART_DEAD_TIME 60000
@@ -19,12 +19,20 @@
 class CELLClient:public ObjectPoolBase<CELLClient,10000>
 {
 public:
-	CELLClient(SOCKET sock) :_sockfd(sock){
-		
+	CELLClient(SOCKET sock) :_sockfd(sock) {
 		rstDtHeart();
 		rstDtSend();
 	}
-	~CELLClient() { closesocket(_sockfd); }
+	~CELLClient() {
+#ifdef _WIN32 
+		closesocket(_sockfd);
+#else
+		close(_sockfd);
+#endif
+		if (INVALID_SOCKET != _sockfd) {
+			_sockfd = INVALID_SOCKET;
+		}
+	}
 	SOCKET getSock() { return _sockfd; }
 	//数据写入缓冲区等待可发送
 	int push(DataHeaderPtr&);
@@ -46,6 +54,10 @@ public:
 	bool hasMsg();
 	//得到缓冲区头部数据
 	DataHeader* front_Msg();
+	inline bool needWrite() {
+		return _recvBuff.needWrite();
+	}
+
 private:
 	//发送缓冲区
 	CELLBuffer _sendBuff = CELLBuffer(SEND_BUFF_SIZE);

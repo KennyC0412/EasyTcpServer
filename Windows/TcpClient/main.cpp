@@ -23,14 +23,14 @@ int main()
 	CELLTimestamp tTime;
 	while (g_bRun) {
 		auto t = tTime.getElapsedSecond();
+		int num = 0;
 		if (t >= 1.0) {
-			int num = sendCount;
+			num = sendCount;
 			CELLLog::Info("thread:<", tCount, ">, ", "client: <", cCount, ">,send count : < ", num, ">");
 			sendCount = 0;
 			tTime.update();
 		}
 	}
-	getchar();
 	return 0;
 }
 

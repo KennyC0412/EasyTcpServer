@@ -1,4 +1,5 @@
 #include "CELLThread.h"
+#include <thread>
 
 void CELLThread::Start(EventCall create = nullptr, EventCall run = nullptr, EventCall close = nullptr)
 {

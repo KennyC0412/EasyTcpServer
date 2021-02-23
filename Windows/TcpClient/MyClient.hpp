@@ -1,5 +1,6 @@
 #include "client.h"
 #include "CELLLog.h"
+#include "CELLMsgStream.hpp"
 
 class MyClient :public TcpClient
 {
@@ -15,8 +16,20 @@ public:
 		break;
 		case CMD_LOGOUT_RESULT:
 		{
-			LogoutResult* logoutResult = static_cast<LogoutResult*>(dh);
-			//std::cout << "receive:CMD_LOGOUT_RESULT from server. result:" << logoutResult->result << "\tdata length:" << logoutResult->dataLength << std::endl;
+			CELLRecvStream r(dh);
+			r.getNetCMD();
+			auto n1 = r.readInt8();
+			auto n2 = r.readInt16();
+			auto n3 = r.readInt32();
+			auto n4 = r.readFloat();
+			auto n5 = r.readDouble();
+			uint32_t n = 0;
+			char name[32] = {};
+			auto n6 = r.readArray(name, 32);
+			char pw[32]{};
+			auto n7 = r.readArray(pw, 32);
+			int aaa[10] = {};
+			auto n8 = r.readArray(aaa, 10);
 		}
 		break;
 		case CMD_NEW_USER_JOIN:

@@ -7,6 +7,7 @@
 #include "CellServer.h"
 #include <memory>
 #include "CELLLog.h"
+#include "CELLClient.h"
 
 time_t oldTime = CELLTime::getNowInMilliSec();
 
@@ -29,13 +30,13 @@ void CELLServer::onRun(CELLThread *pThread)
 			oldTime = CELLTime::getNowInMilliSec();
 			continue;
 		}
+		CheckTime();
 		fd_set fdRead{};
 		fd_set fdWrite{};
 		FD_ZERO(&fdRead);
 		FD_ZERO(&fdWrite);
 		//linux下的最大描述符
 		SOCKET maxSock = _clients.begin()->first;
-
 		if (client_change) {
 			client_change = false;
 			for (auto & iter : _clients) {
@@ -49,16 +50,31 @@ void CELLServer::onRun(CELLThread *pThread)
 		else {
 			memcpy(&fdRead, &fdRead_back, sizeof(fd_set));
 		}
-		memcpy(&fdWrite, &fdRead_back, sizeof(fd_set));
+		int ret;
+		bool NeedWrite = false;
+		//检测需要写的客户端
+		for (auto& iter : _clients) {
+			if (iter.second->needWrite()) {
+				NeedWrite = true;
+				FD_SET(iter.first, &fdWrite);
+			}
+		}
 		timeval t{ 0,0 };
-		int ret = select(maxSock + 1, &fdRead,  &fdWrite, nullptr, &t);
+		if (NeedWrite) {
+			ret = select(maxSock + 1, &fdRead, &fdWrite, nullptr, &t);
+		}
+		else {
+			ret = select(maxSock + 1, &fdRead, nullptr, nullptr, &t);
+		}
 		if (ret < 0) {
 			CELLLog::Error("CellServer.OnRun.Select.Error");
 			pThread->Exit();
 		}
+		else if (ret == 0) {
+			continue;
+		}
 		readData(fdRead);
 		writeData(fdWrite);
-		CheckTime();
 	}
 }
 
@@ -111,11 +127,11 @@ void CELLServer::writeData(fd_set& fdWrite)
 		}
 	}
 #else
-	for (auto iter : g_clients) {
-		if (FD_ISSET(iter.first, &fdRead)) {
-			if (-1 == iter->second->sendData()) {
-				ClientLeave(iter->second);
-				_clients.erase(iter);
+	for (auto iter : _clients) {
+		if (iter.second->needWrite() && FD_ISSET(iter.first, &fdWrite)) {
+			if (-1 == iter.second->sendData()) {
+				ClientLeave(iter.second);
+				 _clients.erase(iter.first);
 			}
 		}
 	}
@@ -153,18 +169,18 @@ void CELLServer::readData(fd_set& fdRead)
 int CELLServer::recvData(CELLClientPtr& client)
 {
 	//接收客户端数据
-	int nLen = client.get()->recvData();
+	int nLen = client->recvData();
 	if (nLen <= 0) {
 		return -1;
 	}
 	//触发接受网络数据计数事件
 	_pINetEvent->onRecv(client);
 	//循环检查是否有消息待处理
-	while (client.get()->hasMsg()) {
+	while (client->hasMsg()) {
 		//处理消息
-		onNetMsg(client, client.get()->front_Msg());
+		onNetMsg(client, client->front_Msg());
 		//移除缓冲区头部消息
-		client.get()->pop_front_Msg();
+		client->pop_front_Msg();
 	}
 	return nLen;
 }
@@ -211,7 +227,7 @@ void CELLServer::clearClient()
 	}
 	closesocket(s_sock);
 #else
-	for (auto s : g_clients) {
+	for (auto s : _clients) {
 		close(s.first);
 	}
 	close(s_sock);

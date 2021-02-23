@@ -9,7 +9,7 @@
 bool g_bRun = true;
 extern TcpClient* client[cCount];
 std::atomic_int readyCount = 0;
-std::atomic_int sendCount = 0;
+std::atomic_int sendCount{ 0 };
 
 void cmdThread()
 {
@@ -48,6 +48,7 @@ void sendThread(int id)
 	for (int i = begin; i < end; ++i) {
 		client[i] = new MyClient();
 	}
+
 	for (int i = begin; i < end; ++i) {
 		client[i]->connServer("127.0.0.1", PORT);
 	}
@@ -60,13 +61,29 @@ void sendThread(int id)
 		std::this_thread::sleep_for(t);
 	}
 
-	DataHeaderPtr data = std::make_shared<Login>();
+	CELLSendStream s;
+	s.setNetCMD(CMD_LOGOUT);
+	s.writeInt8(1);
+	s.writeInt16(2);
+	s.writeInt32(3);
+	s.writeFloat(4.5f);
+	s.writeDouble(6.7);
+	char str[] = "client";
+	s.writeString(str);
+	std::string a{ "abababa" };
+	s.writeString(a);
+	int b[] = { 1,2,3,4,5 };
+	s.writeArray(b, sizeof(b)/sizeof(b[0]));
+	//写入数据长度
+	s.finish();
+	DataHeader* data = reinterpret_cast<DataHeader*>(s.data());
+	DataHeaderPtr pdata = std::shared_ptr<DataHeader>(data);
+
+	DataHeaderPtr xdata = std::make_shared<Login>();
 
 	while (g_bRun) {
-		//std::chrono::milliseconds t(5000);
-		//std::this_thread::sleep_for(t);
 		for (int i = begin; i < end; ++i) {
-			if (SOCKET_ERROR != client[i]->writeData(data)) {
+			if (SOCKET_ERROR != client[i]->writeData(pdata)){
 				++sendCount;
 			}
 			client[i]->onRun();

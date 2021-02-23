@@ -5,6 +5,7 @@
 #include "CellServer.h"
 #include "CELLLog.h"
 #include "NetEnvMan.h"
+
 int TcpServer::initSocket()
 {
 	NetEnv::init();
@@ -126,7 +127,6 @@ void TcpServer::onRun(CELLThread *pThread)
 			break;
 		}
 		if (FD_ISSET(s_sock, &fdRead)) {
-			//FD_CLR(s_sock, &fdRead);
 			acConnection();
 		}
 	}
@@ -172,7 +172,7 @@ void TcpServer::time4msg()
 	auto t1 = _tTime.getElapsedSecond();
 	if (t1 >= 1.0) {
 		int num = clientNum;
-		CELLLog::Info("thread:<", _servers.size(), ">, time:<", t1, "> client num:<",num , ">,msgCount:<", static_cast<int>(msgCount / t1), ">, recvCount:<", static_cast<int>(recvCount / t1), ">");
+		CELLLog::Info("thread:< ", _servers.size(), ">, time:<", t1, "> client num:<",num , ">,msgCount:<", static_cast<int>(msgCount / t1), ">, recvCount:<", static_cast<int>(recvCount / t1), ">");
 		msgCount = 0;
 		recvCount = 0;
 		_tTime.update();

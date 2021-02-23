@@ -16,7 +16,6 @@ public:
 		_taskServer.Close();
 		if (_logFile.is_open()) {
 			_logFile.close();
-			_logFile.clear();
 		}
 	};
 

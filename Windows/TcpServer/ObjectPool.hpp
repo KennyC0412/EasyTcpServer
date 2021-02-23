@@ -1,4 +1,3 @@
-#pragma once
 #ifndef  _OBJECT_POOL_H_
 #define _OBJECT_POOL_H_
 

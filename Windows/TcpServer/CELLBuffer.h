@@ -14,7 +14,11 @@ public:
 	{
 		_BufPtr = new char[_nSize];
 	}
-	~CELLBuffer() { }//delete _BufPtr; }
+	~CELLBuffer() {
+		if (_BufPtr) {
+			_BufPtr = nullptr;
+		}
+	}
 	char * data() { return _BufPtr; }
 	//向缓冲区写入数据
 	bool push(const char*,int);
@@ -22,6 +26,7 @@ public:
 	int recvData(SOCKET);
 	bool hasMsg();
 	void pop(int);
+	inline bool needWrite() { return _nSize - _lastPos > 0; }
 private:
 	//发送缓冲区
 	char *_BufPtr = nullptr;

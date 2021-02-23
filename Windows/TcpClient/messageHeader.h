@@ -22,8 +22,8 @@ struct DataHeader
 		dataLength = sizeof(DataHeader);
 		cmd = 0;
 	}
-	short dataLength;
-	short cmd;
+	unsigned short dataLength;
+	unsigned short cmd;
 };
 
 using DataHeaderPtr = std::shared_ptr<DataHeader>;
