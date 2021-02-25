@@ -172,6 +172,7 @@
     <ClInclude Include="Alloc.hpp" />
     <ClInclude Include="CELLBuffer.h" />
     <ClInclude Include="CELLClient.h" />
+    <ClInclude Include="CELLConfig.hpp" />
     <ClInclude Include="CELLLog.h" />
     <ClInclude Include="CELLMsgStream.hpp" />
     <ClInclude Include="CellServer.h" />
