@@ -7,6 +7,7 @@
 
 #include "Semaphore.h"
 #include <functional>
+#include <thread>
 
 class CELLThread
 {
