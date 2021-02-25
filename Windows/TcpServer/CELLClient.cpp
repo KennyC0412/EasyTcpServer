@@ -7,6 +7,7 @@
 		if (_sendBuff.push(data, sendLen)) {
 			return sendLen;
 		}
+		return 0;
 	}
 
 	void CELLClient::pop_front_Msg()

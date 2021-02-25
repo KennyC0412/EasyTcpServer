@@ -2,6 +2,9 @@
 #define _ALLOCATOR_H_
 
 #include <cstddef>
+#include <cstdlib>
+#include "memorypool.hpp"
+
 void* operator new(size_t);
 void* operator new[](size_t);
 void operator delete(void*);
@@ -9,8 +12,6 @@ void operator delete[](void*);
 void* mem_alloc(size_t);
 void mem_free(void*);
 
-#include <cstdlib>
-#include "memorypool.h"
 
 void* operator new(size_t size)
 {

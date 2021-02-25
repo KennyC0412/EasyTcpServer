@@ -20,7 +20,7 @@ void CELLTaskServer::Start()
 
 void CELLTaskServer::Close()
 {
-	CELLLog::Info("Task Server Closed.");
+	CELLLog_Info("Task Server Closed.");
 	_thread.Close();
 }
 

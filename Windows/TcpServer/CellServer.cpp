@@ -30,7 +30,6 @@ void CELLServer::onRun(CELLThread *pThread)
 			oldTime = CELLTime::getNowInMilliSec();
 			continue;
 		}
-		CheckTime();
 		fd_set fdRead{};
 		fd_set fdWrite{};
 		FD_ZERO(&fdRead);
@@ -67,14 +66,15 @@ void CELLServer::onRun(CELLThread *pThread)
 			ret = select(maxSock + 1, &fdRead, nullptr, nullptr, &t);
 		}
 		if (ret < 0) {
-			CELLLog::Error("CellServer.OnRun.Select.Error");
+			CELLLog_Error("CellServer.OnRun.Select.Error");
 			pThread->Exit();
 		}
 		else if (ret == 0) {
 			continue;
-		}
+		}	
 		readData(fdRead);
 		writeData(fdWrite);
+		CheckTime();
 	}
 }
 
@@ -91,11 +91,8 @@ void CELLServer::CheckTime()
 #else
 			close(iter->first);
 #endif
-			if (_pINetEvent)
-				_pINetEvent->onLeave(iter->second);
-			client_change = true;
-			iter->second->destroyObject(iter->second.get());
-			iter =  _clients.erase(iter++);
+			ClientLeave(iter->second);
+			iter =  _clients.erase(iter);
 		}
 		else {
 			//定时发送心跳检测
@@ -127,12 +124,17 @@ void CELLServer::writeData(fd_set& fdWrite)
 		}
 	}
 #else
-	for (auto iter : _clients) {
-		if (iter.second->needWrite() && FD_ISSET(iter.first, &fdWrite)) {
-			if (-1 == iter.second->sendData()) {
-				ClientLeave(iter.second);
-				 _clients.erase(iter.first);
+	for (auto iter = _clients.begin(); iter != _clients.end();) {
+		if (iter->second->needWrite() && FD_ISSET(iter->first, &fdWrite)) {
+			if (-1 == iter->second->sendData()) {
+				ClientLeave(iter->second);
+				iter = _clients.erase(iter);
 			}
+			if (iter != _clients.end())
+				iter++;
+		}
+		else {
+			iter++;
 		}
 	}
 #endif
@@ -150,7 +152,7 @@ void CELLServer::readData(fd_set& fdRead)
 			}
 		}
 		else {
-			CELLLog::Error("end of iter");
+			CELLLog_Error("End of iterator");
 		}
 	}
 #else
@@ -158,11 +160,15 @@ void CELLServer::readData(fd_set& fdRead)
 		if (FD_ISSET(iter->first, &fdRead)) {
 			if (-1 == recvData(iter->second)) {
 				ClientLeave(iter->second);
-				_clients.erase(iter);
+				iter = _clients.erase(iter);
 			}
+			if(iter != _clients.end())
+				iter++;
+		}
+		else {
+			iter++;
 		}
 	}
-
 #endif
 }
 
@@ -215,7 +221,7 @@ void CELLServer::Close()
 {	
 	_taskServer.Close();
 	_thread.Close();	
-	CELLLog::Info("CellServer Closed.");
+	CELLLog_Info("CellServer Closed.");
 
 }
 

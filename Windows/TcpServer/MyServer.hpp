@@ -30,7 +30,7 @@ public:
 			DataHeaderPtr ret = std::make_shared<S2C_Heart>();
 			//pserver->sendTask(pclient, dynamic_cast<DataHeaderPtr&>(ret));*/
 			if (SOCKET_ERROR == pclient->push(ret)) {
-				CELLLog::Error("Buffer Full!");
+				CELLLog_Error("Buffer Full!");
 			}
 		}
 		break;
@@ -53,7 +53,7 @@ public:
 			auto n8 = r.readArray(aaa, 10);
 			DataHeaderPtr ret = std::make_shared<S2C_Heart>();
 			if (SOCKET_ERROR == pclient->push(ret)) {
-				CELLLog::Error("Buffer Full!");
+				CELLLog_Error("Buffer Full!");
 			}
 		}
 		break;
@@ -65,7 +65,7 @@ public:
 		}
 		break;
 		default: {
-			CELLLog::Info("socket :", pclient->getSock(), " receive unknow message. ", dh->dataLength);
+			CELLLog_Warn("socket :", pclient->getSock(), " receive unknow message. ", dh->dataLength);
 		}
 		}
 	}

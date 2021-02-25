@@ -1,8 +1,6 @@
 #ifndef _SERVER_H_
 #define _SERVER_H_
 
-#include "messageHeader.h"
-#include "pre.h"
 #include "CELLtimestamp.hpp"
 #include <algorithm>
 #include <atomic>

@@ -5,13 +5,11 @@
 #ifndef _CELL_CLIENT_H_
 #define _CELL_CLIENT_H_
 
-#include "pre.h"
-#include "messageHeader.h"
 #include "CELLBuffer.h"
 #include "ObjectPool.hpp"
 
 //心跳检测时间
-#define CLIENT_HEART_DEAD_TIME 60000
+#define CLIENT_HEART_DEAD_TIME 5000
 //缓冲区内缓存消息发送给客户端的时间
 #define CLIENT_SEND_BUFF_TIME 200
 

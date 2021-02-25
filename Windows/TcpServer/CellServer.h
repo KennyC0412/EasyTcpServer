@@ -1,11 +1,7 @@
 #ifndef _CELL_SERVER_H_
 #define _CELL_SERVER_H_
 
-#include "pre.h"
 #include "CELLTask.h"
-#include "CELLClient.h"
-#include "messageHeader.h"
-#include "CELLThread.h"
 #include "CELLtimestamp.hpp"
 
 class CELLServer;

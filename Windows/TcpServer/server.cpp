@@ -16,11 +16,11 @@ int TcpServer::initSocket()
 	//´´½¨socket
 	s_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (INVALID_SOCKET == s_sock) {
-		CELLLog::Error( "Failed to create socket.",s_sock);
+		CELLLog_Error( "Failed to create socket.",s_sock);
 		return -1;
 	}
 	else {
-		CELLLog::Info("Create socket successed.");
+		CELLLog_Info("Create socket successed.");
 	}
 	return 0;
 }
@@ -50,11 +50,11 @@ int TcpServer::bindSocket(const char *ip,unsigned short port )
 		initSocket();
 	}
 	if (SOCKET_ERROR == bind(s_sock, (const sockaddr*)&_sin, sizeof(_sin))) {
-		CELLLog::Error("failed to bind socket:",s_sock);
+		CELLLog_Error("failed to bind socket:",s_sock);
 		return -1;
 	}
 	else {
-		CELLLog::Info("successed to bind socket:",s_sock);
+		CELLLog_Info("successed to bind socket:",s_sock);
 	}
 	return 0;
 }
@@ -62,11 +62,11 @@ int TcpServer::bindSocket(const char *ip,unsigned short port )
 int TcpServer::listenPort(int backlog)
 {
 	if (SOCKET_ERROR == listen(s_sock, backlog)) {
-		CELLLog::Error("failed to listen. socket:", s_sock);
+		CELLLog_Error("failed to listen. socket:", s_sock);
 		return -1;
 	}
 	else {
-		CELLLog::Info("successed to listen. socket:",s_sock);
+		CELLLog_Info("successed to listen. socket:",s_sock);
 	}
 	return 0;
 }
@@ -83,7 +83,7 @@ int TcpServer::acConnection()
 	c_sock = accept(s_sock, (sockaddr*)&clientAddr, (socklen_t*)&addrLen);
 #endif
 		if (INVALID_SOCKET == c_sock) {
-			CELLLog::Error("accept an invalid socket.");
+			CELLLog_Error("accept an invalid socket.");
 			closeSocket(c_sock);
 			return -1;
 		}
@@ -122,7 +122,7 @@ void TcpServer::onRun(CELLThread *pThread)
 		timeval t{ 0,0 };
 		int ret = select(maxSock + 1, &fdRead, nullptr, nullptr, &t);
 		if (ret < 0) {
-			CELLLog::Info("Tcp.Server.On.Run.Select.Error.");
+			CELLLog_Info("Tcp.Server.On.Run.Select.Error.");
 			pThread->Exit();
 			break;
 		}
@@ -172,7 +172,7 @@ void TcpServer::time4msg()
 	auto t1 = _tTime.getElapsedSecond();
 	if (t1 >= 1.0) {
 		int num = clientNum;
-		CELLLog::Info("thread:< ", _servers.size(), ">, time:<", t1, "> client num:<",num , ">,msgCount:<", static_cast<int>(msgCount / t1), ">, recvCount:<", static_cast<int>(recvCount / t1), ">");
+		CELLLog_Info("thread:< ", _servers.size(), ">, time:<", t1, "> client num:<",num , ">,msgCount:<", static_cast<int>(msgCount / t1), ">, recvCount:<", static_cast<int>(recvCount / t1), ">");
 		msgCount = 0;
 		recvCount = 0;
 		_tTime.update();
@@ -182,7 +182,7 @@ void TcpServer::time4msg()
 void TcpServer::Close()
 {
 	_thread.Close();
-	CELLLog::Info("TcpServer Closed.");
+	CELLLog_Info("TcpServer Closed.");
 #ifdef _WIN32
 	closesocket(s_sock);
 #else

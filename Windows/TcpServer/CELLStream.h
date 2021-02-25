@@ -64,7 +64,7 @@ public:
 				pop(nLen);
 			return true;
 		}
-		CELLLog::Error("Read stream.");
+		CELLLog_Error("Read stream.");
 		return false;
 	}
 
@@ -85,7 +85,7 @@ public:
 				return len1;
 			}
 		}
-		CELLLog::Error("Read array.");
+		CELLLog_Error("Read array.");
 		return 0;
 	}
 
@@ -107,7 +107,7 @@ public:
 			push(nLen);
 			return true;
 		}
-		CELLLog::Error("Write stream.");
+		CELLLog_Error("Write stream.");
 		return false;
 	}
 
@@ -124,7 +124,7 @@ public:
 			push(nLen);
 			return true;
 		}
-		CELLLog::Error("Write array");
+		CELLLog_Error("Write array");
 		return false;
 	}
 
