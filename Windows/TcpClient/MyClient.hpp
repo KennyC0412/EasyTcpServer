@@ -1,16 +1,26 @@
 #include "client.h"
 #include "CELLLog.h"
 #include "CELLMsgStream.hpp"
+#include "CELLConfig.hpp"
 
 class MyClient :public TcpClient
 {
 public:
+	MyClient(){
+		_bCheckMsgID = CELLConfig::getInstance().hasKey("-sendMsg");
+	}
 	virtual void onNetMsg(DataHeader* dh)
 	{
 		switch (dh->cmd) {
 		case CMD_LOGIN_RESULT:
 		{
 			LoginResult* loginResult = static_cast<LoginResult*>(dh);
+			if (_bCheckMsgID) {
+				if (loginResult->msgID != nRecvMsgID) {
+					CELLLog_Error("Not equal msgID", loginResult->msgID, "RecvMsgID", nRecvMsgID);
+				}
+				++nRecvMsgID;
+			}
 			//std::cout << "receive:CMD_LOGIN_RESULT from server result:" << loginResult->result << "\tdata length:" << loginResult->dataLength << std::endl;
 		}
 		break;
@@ -47,8 +57,9 @@ public:
 			CELLLog::Error("receive:CMD_ERROR from server. ", "\tdata length:", dh->dataLength);
 		}
 		default:
-			CELLLog::Error("socket :", _client->getSock(), " receive unknow message. ", dh->dataLength);
+			CELLLog::Error("socket :",_client->getSock(), " receive unknow message. ", dh->dataLength);
 		}
 	}
+private:
 
 };

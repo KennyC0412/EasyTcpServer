@@ -20,13 +20,7 @@
 #include <iostream>
 #include <atomic>
 
-const short PORT = 8888;
-const int BACKLOG = 5;
-const int RECV_BUFF_SIZE = 10240 * 5;
-const int SEND_BUFF_SIZE = 10240 * 5;
-//客户端数量
-const int cCount =1000;
-//线程数量
-const int tCount = 4;
+const int RECV_BUFF_SIZE = 10240*5;
+const int SEND_BUFF_SIZE = 10240*5;
 
 #endif // ! _PRE_H_

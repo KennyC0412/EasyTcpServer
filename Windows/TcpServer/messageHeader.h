@@ -20,9 +20,11 @@ struct DataHeader
 	{
 		dataLength = sizeof(DataHeader);
 		cmd = 0;
+		msgID = 0;
 	}
 	unsigned short dataLength;
 	unsigned short cmd;
+	unsigned int msgID;
 };
 
 using DataHeaderPtr = std::shared_ptr<DataHeader>;

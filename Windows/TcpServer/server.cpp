@@ -6,6 +6,8 @@
 #include "CELLLog.h"
 #include "NetEnvMan.h"
 
+extern int nMaxClient;
+
 int TcpServer::initSocket()
 {
 	NetEnv::init();
@@ -77,6 +79,7 @@ int TcpServer::acConnection()
 	memset(&clientAddr, 0, sizeof(sockaddr_in));
 	SOCKET c_sock = INVALID_SOCKET;
 	int addrLen = sizeof(clientAddr);
+	
 #ifdef _WIN32
 	c_sock = accept(s_sock, (sockaddr*)&clientAddr, &addrLen);
 #else
@@ -88,11 +91,21 @@ int TcpServer::acConnection()
 			return -1;
 		}
 		else {
-			CELLClientPtr c(new CELLClient(c_sock));
-			addClientToServer(c);
-			//inet_ntoa(clientAddr.sin_addr);
+			if (clientNum < nMaxClient) {
+				CELLClientPtr c(new CELLClient(c_sock));
+				addClientToServer(c);
+				//inet_ntoa(clientAddr.sin_addr);
+			}
+			else {
+#ifdef _WIN32
+				closesocket(c_sock);
+#else
+				close(c_sock);
+#endif
+				CELLLog_Warn("Accept to max client num.");
+			}
 		}
-		return 0;
+		return c_sock;
 }
 
 void TcpServer::addClientToServer(CELLClientPtr client)
@@ -172,7 +185,7 @@ void TcpServer::time4msg()
 	auto t1 = _tTime.getElapsedSecond();
 	if (t1 >= 1.0) {
 		int num = clientNum;
-		CELLLog_Info("thread:< ", _servers.size(), ">, time:<", t1, "> client num:<",num , ">,msgCount:<", static_cast<int>(msgCount / t1), ">, recvCount:<", static_cast<int>(recvCount / t1), ">");
+		CELLLog_Info("thread:< ", _servers.size(), ">, time:<", t1, "> client num:<",num , ">,msgCount:<", static_cast<int>(msgCount / t1), ">, recvCount:<", static_cast<int>(recvCount), ">");
 		msgCount = 0;
 		recvCount = 0;
 		_tTime.update();

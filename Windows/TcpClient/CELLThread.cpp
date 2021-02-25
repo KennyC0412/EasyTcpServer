@@ -44,4 +44,5 @@ void CELLThread::onWork()
 		onDestroy(this);
 	}
 	sem.wakeup();
+	isRun = false;
 }

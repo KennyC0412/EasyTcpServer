@@ -75,7 +75,7 @@ public:
 		uint32_t len1 = 0;
 		Read<uint32_t>(len1, true);
 		//判断数组是否能被放下
-		if (len1 < len) {
+		if (len1 <= len) {
 			auto nLen = sizeof(T) * len1;
 			if (canRead(nLen + sizeof(uint32_t))) {
 				//跳过数组长度

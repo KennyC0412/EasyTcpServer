@@ -1,6 +1,6 @@
 #include "CELLBuffer.h"
 
-bool CELLBuffer::push(const char*pData, int sendLen)
+bool CELLBuffer::push(const char* pData, int sendLen)
 {
 	////根据业务需求拓展
 	//if (_lastPos + sendLen > _nSize) {
@@ -34,7 +34,16 @@ int CELLBuffer::sendData(SOCKET sockfd)
 	int ret = 0;
 	if (_lastPos > 0 && INVALID_SOCKET != sockfd) {
 		ret = send(sockfd, _BufPtr, _lastPos, 0);
+		if(ret <= 0){
+		return SOCKET_ERROR;
+		}
+	else if (ret == _lastPos) {
 		_lastPos = 0;
+	}
+	else {
+		_lastPos -= ret;
+		memcpy(_BufPtr, _BufPtr + ret, _lastPos);
+	}
 		_bufFullCount = 0;
 	}
 	return ret;
