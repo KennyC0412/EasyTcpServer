@@ -89,13 +89,7 @@
     <ClInclude Include="Semaphore.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="memorypool.hpp">
-      <Filter>源文件</Filter>
-    </ClInclude>
     <ClInclude Include="ObjectPool.hpp">
-      <Filter>源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Alloc.hpp">
       <Filter>源文件</Filter>
     </ClInclude>
     <ClInclude Include="CELLStream.h">
@@ -103,6 +97,12 @@
     </ClInclude>
     <ClInclude Include="CELLMsgStream.hpp">
       <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="memorypool.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Alloc.hpp">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

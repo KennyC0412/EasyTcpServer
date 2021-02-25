@@ -10,8 +10,7 @@ void* mem_alloc(size_t);
 void mem_free(void*);
 
 #include <cstdlib>
-#include "memorypool.h"
-
+#include "memorypool.hpp"
 void* operator new(size_t size)
 {
 	return MemoryManage::getInstance().allocMem(size);

@@ -9,7 +9,7 @@
 #include "ObjectPool.hpp"
 
 //心跳检测时间
-#define CLIENT_HEART_DEAD_TIME 60000
+#define CLIENT_HEART_DEAD_TIME 10000
 //缓冲区内缓存消息发送给客户端的时间
 #define CLIENT_SEND_BUFF_TIME 200
 
