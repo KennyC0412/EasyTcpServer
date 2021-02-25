@@ -1,0 +1,17 @@
+#server ip
+#strIP="any"
+#server port
+#nPort=8888
+#server thread
+#nThread=2
+#client limit
+#nClient=5000
+
+cmd='strIP=any'
+cmd=$cmd' nPort=8888'
+cmd=$cmd' nThread=2'
+cmd=$cmd' nClient=1000'
+./server $cmd
+
+
+read -p "..Press any key to exit.." var
