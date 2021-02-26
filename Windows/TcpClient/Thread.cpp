@@ -11,6 +11,8 @@ extern const char* strIP;
 extern short nPort;
 extern  int nClient;
 extern int nThread;
+extern int nMsg;
+extern int sleepTime;
 
 bool g_bRun = true;
 std::atomic_int readyCount = 0;
@@ -75,12 +77,21 @@ void WorkThread(CELLThread* pThread,int id)
 	DataHeaderPtr xdata = std::make_shared<Login>();
 
 	while (g_bRun) {
-		for (int i = begin; i < end; ++i) {
-			
-			if (SOCKET_ERROR != client[i]->writeData(xdata)){
-				++sendCount;
+		time_t old = CELLTime::getNowInMilliSec();
+	
+			//发送消息限制
+			for (int j = 0; j < nMsg; ++j) {
+				for (int i = begin; i < end; ++i) {
+					{
+						if (client[i]->isRun()) {
+							if (SOCKET_ERROR != client[i]->writeData(xdata)) {
+								++sendCount;
+							}
+						}
+					}
+				}
 			}
-		}
+		
 		for (int i = begin; i < end; ++i) {
 			if (client[i]->isRun()) {
 				if (!client[i]->onRun(0)) {
@@ -89,7 +100,12 @@ void WorkThread(CELLThread* pThread,int id)
 				}
 			}
 		}
-	}
+		time_t now = CELLTime::getNowInMilliSec();
+		while (now - old < 1000) {
+		 now = CELLTime::getNowInMilliSec();
+		}
+	
+}
 
 	for (int i = begin; i < end; ++i) {
 		client[i]->Close();

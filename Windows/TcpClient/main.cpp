@@ -12,6 +12,8 @@ extern std::atomic_int sendCount;
  short nPort;
  int nThread;
 int nClient;
+int nMsg;
+int sleepTime;
 std::vector<MyClient*> client;
 
 int main(int argc,char* argv[])
@@ -22,6 +24,8 @@ int main(int argc,char* argv[])
 	nPort = CELLConfig::getInstance().getCMD("nPort", 8888);
 	nThread = CELLConfig::getInstance().getCMD("nThread", 4);
 	nClient = CELLConfig::getInstance().getCMD("nClient",2000 );
+	nMsg = CELLConfig::getInstance().getCMD("nMsg", 100);
+	sleepTime = CELLConfig::getInstance().getCMD("sleepTime", 1000);
 	client.resize(nClient);
 	CELLLog::getInstance().setLogPath("temp\\clientLog.txt", 'w', false);
 

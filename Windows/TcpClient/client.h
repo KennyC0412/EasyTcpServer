@@ -6,6 +6,7 @@
 #include "pre.h"
 #include "CELLClient.h"
 #include "CELLBuffer.h"
+#include "FDset.hpp"
 
 class TcpClient {
 public:
@@ -36,6 +37,8 @@ public:
 	bool _bCheckMsgID = false;
 private:
 	bool isConnect;
+	FDset fdRead;
+	FDset fdWrite;
 };
 
 
