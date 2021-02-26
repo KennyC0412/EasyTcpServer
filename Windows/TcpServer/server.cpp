@@ -5,6 +5,7 @@
 #include "CellServer.h"
 #include "CELLLog.h"
 #include "NetEnvMan.h"
+#include "FDset.hpp"
 
 extern int nMaxClient;
 
@@ -123,23 +124,23 @@ void TcpServer::addClientToServer(CELLClientPtr client)
 
 void TcpServer::onRun(CELLThread *pThread)
 {
+	FDset fdRead;
 	while (pThread->Status()) {
 		time4msg();
-		fd_set fdRead;
 		//清理集合
-		FD_ZERO(&fdRead);
+		fdRead.zero();
 		//将描述符加入集合
-		FD_SET(s_sock, &fdRead);
+		fdRead.add(s_sock);
 		//linux下的最大描述符
 		SOCKET maxSock = s_sock;
 		timeval t{ 0,0 };
-		int ret = select(maxSock + 1, &fdRead, nullptr, nullptr, &t);
+		int ret = select(maxSock + 1, fdRead.getSet(), nullptr, nullptr, &t);
 		if (ret < 0) {
 			CELLLog_Info("Tcp.Server.On.Run.Select.Error.");
 			pThread->Exit();
 			break;
 		}
-		if (FD_ISSET(s_sock, &fdRead)) {
+		if (fdRead.has(s_sock)) {
 			acConnection();
 		}
 	}
@@ -184,8 +185,10 @@ void TcpServer::time4msg()
 {
 	auto t1 = _tTime.getElapsedSecond();
 	if (t1 >= 1.0) {
-		int num = clientNum;
-		CELLLog_Info("thread:< ", _servers.size(), ">, time:<", t1, "> client num:<",num , ">,msgCount:<", static_cast<int>(msgCount / t1), ">, recvCount:<", static_cast<int>(recvCount), ">");
+		for (auto s : _servers) {
+			msgCount += s->getMsg();
+		}
+		CELLLog_Info("thread:< ", _servers.size(), ">, time:<", t1, "> client num:<",(int)clientNum , ">,msgCount:<", static_cast<int>(msgCount), ">, recvCount:<", static_cast<int>(recvCount), ">");
 		msgCount = 0;
 		recvCount = 0;
 		_tTime.update();

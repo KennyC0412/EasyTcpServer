@@ -3,6 +3,7 @@
 
 #include "CELLTask.h"
 #include "CELLtimestamp.hpp"
+#include "FDset.hpp"
 
 class CELLServer;
 class INetEvent;
@@ -27,15 +28,24 @@ public:
 	void Start();
 	void sendTask(CELLClientPtr& ,DataHeaderPtr &);
 	size_t getClientCount() { return _clients.size() + clientsBuffer.size(); }
-	void readData(fd_set&);
-	void writeData(fd_set&);
+	void readData();
+	void writeData();
 	void CheckTime();
 	void ClientLeave(CELLClientPtr&);
 	void clearClient();
+	inline int getMsg() {
+		int temp = msgCount;
+		msgCount = 0;
+		return temp;
+	}
 protected:
 	//处理网络消息
 	void onRun(CELLThread*);
+	std::atomic_int msgCount = 0;
 private:
+	FDset _fdRead_back;
+	FDset _fdRead;
+	FDset _fdWrite;
 	CELLTimestamp _tTime;
 	CELLTaskServer _taskServer;
 	INetEvent* _pINetEvent;

@@ -30,7 +30,7 @@ public:
 	//可能会被多个线程调用 线程不安全
 	virtual void onNetMsg(CELLServer* pserver, CELLClientPtr& pclient, DataHeader* dh)
 	{
-		TcpServer::onNetMsg(pserver, pclient, dh);
+		//TcpServer::onNetMsg(pserver, pclient, dh);
 		switch (dh->cmd) {
 		case CMD_LOGIN: {
 			Login* login = static_cast<Login*>(dh);
@@ -55,21 +55,21 @@ public:
 		break;
 		case CMD_LOGOUT:
 		{
-			CELLRecvStream r(dh);
-			r.readInt16();
-			r.getNetCMD();
-			auto n1 = r.readInt8();
-			auto n2 = r.readInt16();
-			auto n3 = r.readInt32();
-			auto n4 = r.readFloat();
-			auto n5 = r.readDouble();
-			uint32_t n = 0;
-			char name[32] = {};
-			auto n6 = r.readArray(name, 32);
-			char pw[32]{};
-			auto n7 = r.readArray(pw, 32);
-			int aaa[10] = {};
-			auto n8 = r.readArray(aaa, 10);
+			//CELLRecvStream r(dh);
+			//r.readInt16();
+			//r.getNetCMD();
+			//auto n1 = r.readInt8();
+			//auto n2 = r.readInt16();
+			//auto n3 = r.readInt32();
+			//auto n4 = r.readFloat();
+			//auto n5 = r.readDouble();
+			//uint32_t n = 0;
+			//char name[32] = {};
+			//auto n6 = r.readArray(name, 32);
+			//char pw[32]{};
+			//auto n7 = r.readArray(pw, 32);
+			//int aaa[10] = {};
+			//auto n8 = r.readArray(aaa, 10);
 			DataHeaderPtr ret = std::make_shared<S2C_Heart>();
 			if (SOCKET_ERROR == pclient->push(ret)) {
 				CELLLog_Error("Buffer Full!");
