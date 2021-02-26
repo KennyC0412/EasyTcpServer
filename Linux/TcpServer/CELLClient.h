@@ -9,7 +9,7 @@
 #include "ObjectPool.hpp"
 
 //心跳检测时间
-#define CLIENT_HEART_DEAD_TIME 5000
+#define CLIENT_HEART_DEAD_TIME 60000
 //缓冲区内缓存消息发送给客户端的时间
 #define CLIENT_SEND_BUFF_TIME 200
 
@@ -17,7 +17,7 @@
 class CELLClient:public ObjectPoolBase<CELLClient,10000>
 {
 public:
-	CELLClient(SOCKET sock) :_sockfd(sock) {
+	CELLClient(SOCKET sock) :_sockfd(sock){
 		rstDtHeart();
 		rstDtSend();
 	}
@@ -55,6 +55,9 @@ public:
 	inline bool needWrite() {
 		return _recvBuff.needWrite();
 	}
+
+	unsigned int nRecvMsgID = 1;
+	unsigned int nSendMsgID = 1;
 
 private:
 	//发送缓冲区

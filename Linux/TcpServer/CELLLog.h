@@ -70,7 +70,7 @@ public:
 		Echo(str, args...);
 	}
 	//设置日志路径
-	void setLogPath(const char*, char);
+	void setLogPath(const char*, char,bool = true);
 	//写入记录前缀
 	static void makePre(const std::string&,CELLLog*);
 

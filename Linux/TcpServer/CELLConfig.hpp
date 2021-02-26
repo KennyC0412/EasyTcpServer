@@ -55,6 +55,14 @@ public:
 		}
 		return def;
 	}
+
+	bool hasKey(const char* key) {
+		auto it = _k_v.find(key);
+		if (it == _k_v.end()) {
+			return false;
+		}
+		return true;
+	}
 private:
 	CELLConfig() {}
 	~CELLConfig(){}

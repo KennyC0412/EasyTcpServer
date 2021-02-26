@@ -58,16 +58,4 @@ private:
 	CELLThread _thread;
 };
 
-class sendMsg2Client :public CELLTask
-{
-public:
-	sendMsg2Client(CELLClientPtr& client, DataHeaderPtr& dh) :pClient(client), pHeader(dh) {
-
-	}
-	//Ö´ĞĞÈÎÎñ
-	virtual void doTask();
-private:
-	CELLClientPtr pClient;
-	DataHeaderPtr pHeader;
-};
 #endif

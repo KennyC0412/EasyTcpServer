@@ -1,16 +1,22 @@
-#server ip
-#strIP="any"
-#server port
-#nPort=8888
-#server thread
-#nThread=2
-#client limit
-#nClient=5000
+#!/bin/bash
+cd `dirname $0`
+noOpenFile='ulimit -n'
+if [ $noOpenFile -lt 10240 ];then
+	echo "reset max file num"
+	ulimit -n 10240
+fi
+echo "max file num"
+ulimit -n
 
+#server ip
 cmd='strIP=any'
+#server port
 cmd=$cmd' nPort=8888'
-cmd=$cmd' nThread=2'
-cmd=$cmd' nClient=1000'
+#msg Thread
+cmd=$cmd' nThread=4'
+#max client
+cmd=$cmd' nClient=10000'
+
 ./server $cmd
 
 

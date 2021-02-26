@@ -8,12 +8,12 @@
 #include <memory>
 #include "CELLLog.h"
 #include "CELLClient.h"
+#include "FDset.hpp"
 
 time_t oldTime = CELLTime::getNowInMilliSec();
 
 void CELLServer::onRun(CELLThread *pThread)
 {
-	fd_set fdRead_back;
 	while (pThread->Status()) {
 		if (!clientsBuffer.empty())
 		{	//将缓冲区的客户端加入到客户队列
@@ -30,40 +30,38 @@ void CELLServer::onRun(CELLThread *pThread)
 			oldTime = CELLTime::getNowInMilliSec();
 			continue;
 		}
-		fd_set fdRead{};
-		fd_set fdWrite{};
-		FD_ZERO(&fdRead);
-		FD_ZERO(&fdWrite);
+		_fdRead.zero();
 		//linux下的最大描述符
 		SOCKET maxSock = _clients.begin()->first;
 		if (client_change) {
 			client_change = false;
 			for (auto & iter : _clients) {
-				FD_SET(iter.first, &fdRead);
+				_fdRead.add(iter.first);
 				if (maxSock < iter.first) {
 					maxSock = iter.first;
 				}
 			}
-			memcpy(&fdRead_back, &fdRead, sizeof(fd_set));
+			_fdRead_back.copy(_fdRead);
 		}
 		else {
-			memcpy(&fdRead, &fdRead_back, sizeof(fd_set));
+			_fdRead.copy(_fdRead_back);
 		}
 		int ret;
 		bool NeedWrite = false;
+		_fdWrite.zero();
 		//检测需要写的客户端
 		for (auto& iter : _clients) {
 			if (iter.second->needWrite()) {
 				NeedWrite = true;
-				FD_SET(iter.first, &fdWrite);
+				_fdWrite.add(iter.first);
 			}
 		}
 		timeval t{ 0,0 };
 		if (NeedWrite) {
-			ret = select(maxSock + 1, &fdRead, &fdWrite, nullptr, &t);
+			ret = select(maxSock + 1, _fdRead.getSet(), _fdWrite.getSet(), nullptr, &t);
 		}
 		else {
-			ret = select(maxSock + 1, &fdRead, nullptr, nullptr, &t);
+			ret = select(maxSock + 1, _fdRead.getSet(), nullptr, nullptr, &t);
 		}
 		if (ret < 0) {
 			CELLLog_Error("CellServer.OnRun.Select.Error");
@@ -72,8 +70,8 @@ void CELLServer::onRun(CELLThread *pThread)
 		else if (ret == 0) {
 			continue;
 		}	
-		readData(fdRead);
-		writeData(fdWrite);
+		readData();
+		writeData();
 		CheckTime();
 	}
 }
@@ -111,11 +109,12 @@ void CELLServer::ClientLeave(CELLClientPtr& client)
 	client->destroyObject(client.get());
 }
 
-void CELLServer::writeData(fd_set& fdWrite)
+void CELLServer::writeData()
 {
 #ifdef _WIN32
-	for (int i = 0; i < fdWrite.fd_count; ++i) {
-		auto iter = _clients.find(fdWrite.fd_array[i]);
+	fd_set* temp = _fdWrite.getSet();
+	for (size_t i = 0; i < temp->fd_count; ++i) {
+		auto iter = _clients.find(temp->fd_array[i]);
 		if (iter != _clients.end()) {
 			if (-1 == iter->second->sendData()) {
 				ClientLeave(iter->second);
@@ -125,7 +124,7 @@ void CELLServer::writeData(fd_set& fdWrite)
 	}
 #else
 	for (auto iter = _clients.begin(); iter != _clients.end();) {
-		if (iter->second->needWrite() && FD_ISSET(iter->first, &fdWrite)) {
+		if (iter->second->needWrite() && _fdWrite.has(iter->first)){
 			if (-1 == iter->second->sendData()) {
 				ClientLeave(iter->second);
 				iter = _clients.erase(iter);
@@ -140,11 +139,12 @@ void CELLServer::writeData(fd_set& fdWrite)
 #endif
 }
 
-void CELLServer::readData(fd_set& fdRead)
+void CELLServer::readData()
 {
 #ifdef _WIN32
-	for (int i = 0; i < fdRead.fd_count; i++) {
-		auto iter = _clients.find(fdRead.fd_array[i]);
+	fd_set* temp = _fdRead.getSet();
+	for (size_t i = 0; i < temp->fd_count; i++) {
+		auto iter = _clients.find(temp->fd_array[i]);
 		if (iter != _clients.end()) {
 			if (-1 == recvData(iter->second)) {
 				ClientLeave(iter->second);
@@ -157,7 +157,7 @@ void CELLServer::readData(fd_set& fdRead)
 	}
 #else
 	for (auto iter = _clients.begin(); iter != _clients.end();) {
-		if (FD_ISSET(iter->first, &fdRead)) {
+		if (_fdRead.has(iter->first)) {
 			if (-1 == recvData(iter->second)) {
 				ClientLeave(iter->second);
 				iter = _clients.erase(iter);
@@ -184,6 +184,7 @@ int CELLServer::recvData(CELLClientPtr& client)
 	//循环检查是否有消息待处理
 	while (client->hasMsg()) {
 		//处理消息
+		++msgCount;
 		onNetMsg(client, client->front_Msg());
 		//移除缓冲区头部消息
 		client->pop_front_Msg();
