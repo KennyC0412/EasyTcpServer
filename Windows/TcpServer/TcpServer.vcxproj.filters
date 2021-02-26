@@ -51,6 +51,9 @@
     <ClCompile Include="server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FDset.hpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CELLBuffer.h">
@@ -104,11 +107,11 @@
     <ClInclude Include="memorypool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MyServer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ObjectPool.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyServer.hpp">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

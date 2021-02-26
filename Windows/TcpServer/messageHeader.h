@@ -20,9 +20,11 @@ struct DataHeader
 	{
 		dataLength = sizeof(DataHeader);
 		cmd = 0;
+		msgID = 0;
 	}
 	unsigned short dataLength;
 	unsigned short cmd;
+	unsigned int msgID;
 };
 
 using DataHeaderPtr = std::shared_ptr<DataHeader>;
@@ -47,6 +49,7 @@ struct LoginResult :public DataHeader
 		result = 0;
 	}
 	int result;
+	char data[956]{};
 };
 
 struct Logout :public DataHeader

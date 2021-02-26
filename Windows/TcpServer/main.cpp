@@ -7,14 +7,14 @@
 #include "NetEnvMan.h"
 #include "CELLConfig.hpp"
 
-
+int nMaxClient;
 int main(int argc,char *argv[])
 {
 	CELLConfig::getInstance().Init(argc, argv);
 	const char* strIP = CELLConfig::getInstance().getCMD("strIP", "any");
 	uint16_t nPort = CELLConfig::getInstance().getCMD("nPort", 8888);
 	int nThread = CELLConfig::getInstance().getCMD("nThread", 4);
-	int nClient = CELLConfig::getInstance().getCMD("nClient", 1000);
+	nMaxClient = CELLConfig::getInstance().getCMD("nClient", 10000);
 	
 	if (strcmp(strIP, "any") == 0) {
 		strIP = nullptr;

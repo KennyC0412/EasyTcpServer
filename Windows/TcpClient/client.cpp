@@ -2,10 +2,9 @@
 #include "messageHeader.h"
 #include "pre.h"
 #include "CELLtimestamp.hpp"
-#include "NetEnvMan.h"
+#include "NetEnvMan.hpp"
 #include "CELLLog.h"
 
-TcpClient* client[cCount];
 
 int TcpClient::initSocket() 
 {
@@ -25,7 +24,7 @@ int TcpClient::initSocket()
 		_client = std::make_shared<CELLClient>(c_sock);
 		isConnect = true;
 	}
-	return 0;
+	return c_sock;
 }
 
 int TcpClient::connServer(const char *ip,short port)
@@ -54,68 +53,70 @@ int TcpClient::connServer(const char *ip,short port)
 	return ret;
 }
 
-int TcpClient::readData()
-{
-	 int nLen = _client->recvData();
-	 if (nLen <= 0) {
-		 return -1;
-	 }
-	 while (_client->hasMsg()) {
-		 onNetMsg(_client->front_Msg());
-		 _client->pop_front_Msg();
-	}
-	 return nLen;
-}
 
 
 
 int TcpClient::writeData(DataHeaderPtr& dh)
 {
+	dh->msgID = nSendMsgID++;
 	return _client->push(dh);
 }
 
-void TcpClient::onRun()
+
+
+bool TcpClient::onRun(int waitTime)
 {
 	SOCKET sock = _client->getSock();
 	if (isRun()) {
 		//³õÊ¼»¯
-		fd_set fdRead;
-		fd_set fdWrite;
-
-		FD_ZERO(&fdRead);
-		FD_ZERO(&fdWrite);
-
-		FD_SET(sock, &fdRead);
-		timeval t{ 0,0 };
+		fdRead.zero();
+		fdWrite.zero();
+		fdRead.add(sock);
+		timeval t{ 0,waitTime };
 		int ret = 0;
 		if (_client->needWrite()) {
-			FD_SET(sock, &fdWrite);
-			ret = select(sock + 1, &fdRead, &fdWrite, nullptr, &t);
+			fdWrite.add(sock);
+			ret = select(sock + 1,fdRead.getSet(), fdWrite.getSet(), nullptr, &t);
 		}
 		else {
-			ret = select(sock + 1, &fdRead, nullptr, nullptr, &t);
+			ret = select(sock + 1, fdRead.getSet(), nullptr, nullptr, &t);
 		}
 		if (ret < 0) {
 			CELLLog::Info("Socket: ", sock, " select task finished.");
 			Close();
+			return false;
 		}
-		if (FD_ISSET(sock, &fdRead)) {
+		if (fdRead.has(sock)) {
 			if (-1 == readData()) {
 				CELLLog::Error("Receive fault.");
 				Close();
-				return;
+				return false;
 			}
 		}
-		if (FD_ISSET(sock, &fdWrite)) {
+		if (fdWrite.has(sock)) {
 			if (-1 == _client->sendData()) {
 				CELLLog::Error("Write fault.");
 				Close();
-				return;
+				return false;
 			}
 		}
+		return true;
 	}
+	return false;
 }
 
+int TcpClient::readData()
+{
+	int nLen = _client->recvData();
+	if (nLen <= 0) {
+		return -1;
+	}
+	while (_client->hasMsg()) {
+		onNetMsg(_client->front_Msg());
+		_client->pop_front_Msg();
+	}
+	return nLen;
+}
 
 bool TcpClient::isRun()
 {

@@ -14,9 +14,8 @@ public:
 	{
 		_BufPtr = new char[_nSize];
 	}
-	~CELLBuffer() { 
+	~CELLBuffer() {
 		if (_BufPtr) {
-			delete _BufPtr;
 			_BufPtr = nullptr;
 		}
 	}

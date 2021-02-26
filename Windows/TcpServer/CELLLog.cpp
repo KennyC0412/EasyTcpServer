@@ -23,14 +23,19 @@ void CELLLog::Warn(const std::string& str)
 
 }
 
-void CELLLog::setLogPath(const char* logName, char mode)
+void CELLLog::setLogPath(const char* logName, char mode,bool hasDate)
 {
 	if (_logFile.is_open())
 		_logFile.close();
-	auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-	std::tm* now = std::localtime(&t);
 	char logPath[256];
-	sprintf(logPath, "%s[%d-%d-%d %d-%d-%d].txt", logName,now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+	if (hasDate) {
+		auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+		std::tm* now = std::localtime(&t);
+		sprintf(logPath, "%s[%d-%d-%d %d-%d-%d].txt", logName, now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+	}
+	else {
+		strcpy(logPath, logName);
+	}
 	switch (mode) {
 	case 'w':_logFile.open(logPath, std::ios::out); break;
 	case 'a':_logFile.open(logPath, std::ios::app); break;

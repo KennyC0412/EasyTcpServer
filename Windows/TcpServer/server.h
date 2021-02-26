@@ -33,7 +33,7 @@ public:
 	//创建套接字
 	int initSocket();
 	//绑定套接字
-	int bindSocket(const char* ip = nullptr, unsigned short = PORT);
+	int bindSocket(const char* ip, unsigned short);
 	//监听端口
 	int listenPort(int backlog = BACKLOG);
 	//接受连接
@@ -42,7 +42,7 @@ public:
 	int sendData(SOCKET, DataHeaderPtr&);
 	//关闭套接字
 	void closeSocket(SOCKET);
-	void Start(int = CELL_SERVER_COUNT);
+	void Start(int);
 	//判断
 	bool isRun();
 	//响应消息
@@ -54,7 +54,7 @@ public:
 	//可能会被多个线程调用 线程不安全
 	virtual void onLeave(CELLClientPtr &) { --clientNum; }
 	//可能会被多个线程调用 线程不安全
-	virtual void onNetMsg(CELLServer *,CELLClientPtr &,DataHeader *) { ++msgCount; }
+	virtual inline void onNetMsg(CELLServer *,CELLClientPtr &,DataHeader *) { ++msgCount; }
 	virtual void onRecv(CELLClientPtr &) { ++recvCount; }
 protected:
 	void onRun(CELLThread*);
