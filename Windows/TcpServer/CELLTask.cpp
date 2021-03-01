@@ -53,8 +53,4 @@ void CELLTaskServer::onRun(CELLThread * pThread)
 	}
 }
 
-void sendMsg2Client::doTask()
-{
-	pClient->push(pHeader);	//发送缓冲区已满 消息发送失败
-	pClient->sendData();
-}
+

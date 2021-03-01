@@ -1,13 +1,12 @@
 #include "server.h"
 #include "pre.h"
-#include "messageHeader.h"
+#include "MsgHeader.h"
 #include "CELLClient.h"
 #include "CellServer.h"
 #include "CELLLog.h"
 #include "NetEnvMan.h"
 #include "FDset.hpp"
 
-extern int nMaxClient;
 
 int TcpServer::initSocket()
 {
@@ -92,7 +91,7 @@ int TcpServer::acConnection()
 			return -1;
 		}
 		else {
-			if (clientNum < nMaxClient) {
+			if (clientNum < _nMaxClient) {
 				CELLClientPtr c(new CELLClient(c_sock));
 				addClientToServer(c);
 				//inet_ntoa(clientAddr.sin_addr);
@@ -118,48 +117,9 @@ void TcpServer::addClientToServer(CELLClientPtr client)
 			minServer = _servers[i];
 		}
 	}
-	onJoin(client);
 	minServer->addClient(client);
 }
 
-void TcpServer::onRun(CELLThread *pThread)
-{
-	FDset fdRead;
-	while (pThread->Status()) {
-		time4msg();
-		//清理集合
-		fdRead.zero();
-		//将描述符加入集合
-		fdRead.add(s_sock);
-		//linux下的最大描述符
-		SOCKET maxSock = s_sock;
-		timeval t{ 0,0 };
-		int ret = select(maxSock + 1, fdRead.getSet(), nullptr, nullptr, &t);
-		if (ret < 0) {
-			CELLLog_Info("Tcp.Server.On.Run.Select.Error.");
-			pThread->Exit();
-			break;
-		}
-		if (fdRead.has(s_sock)) {
-			acConnection();
-		}
-	}
-}
-
-void TcpServer::Start(int tCount)
-{
-	for (int n = 0; n < tCount; ++n) {
-		CELLServerPtr s = std::make_shared<CELLServer>(s_sock);
-		_servers.push_back(s);
-		//注册网络事件接收对象
-		s->setEventObj(this);
-		//启动消息处理线程
-		s->Start();
-	}
-	_thread.Start(nullptr,
-		[this](CELLThread* pThread) { onRun(pThread); }, nullptr);
-
-}
 
 int TcpServer::sendData(SOCKET c_sock, DataHeaderPtr &dh)
 {
@@ -185,10 +145,7 @@ void TcpServer::time4msg()
 {
 	auto t1 = _tTime.getElapsedSecond();
 	if (t1 >= 1.0) {
-		for (auto s : _servers) {
-			msgCount += s->getMsg();
-		}
-		CELLLog_Info("thread:< ", _servers.size(), ">, time:<", t1, "> client num:<",(int)clientNum , ">,msgCount:<", static_cast<int>(msgCount), ">, recvCount:<", static_cast<int>(recvCount), ">");
+		CELLLog_Info("thread:< ", _servers.size(), ">, time:<", t1, "> client num:<",(int)clientNum , ">,msgCount:<", (int)msgCount, ">, recvCount:<", (int)recvCount, ">");
 		msgCount = 0;
 		recvCount = 0;
 		_tTime.update();

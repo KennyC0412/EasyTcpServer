@@ -54,6 +54,12 @@
     <ClCompile Include="FDset.hpp">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="selectServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CELLSelect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CELLBuffer.h">
@@ -75,9 +81,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CELLThread.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="messageHeader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NetEnvMan.h">
@@ -112,6 +115,15 @@
     </ClInclude>
     <ClInclude Include="MyServer.hpp">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="selectServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CELLSelect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MsgHeader.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

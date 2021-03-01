@@ -16,19 +16,19 @@ class INetEvent
 {
 public:
 	//客户端加入事件
-	virtual void onJoin(CELLClientPtr & ) = 0;
+	virtual void onJoin() = 0;
 	//客户端离开事件
-	virtual void onLeave(CELLClientPtr &) = 0;
+	virtual void onLeave() = 0;
 	//客户端消息事件
 	virtual void onNetMsg(CELLServer *, CELLClientPtr &,DataHeader *) = 0;
-	virtual void onRecv(CELLClientPtr &) = 0;
+	virtual void onRecv() = 0;
 };
 
 
 class TcpServer :public INetEvent
 {
 public:
-	TcpServer():s_sock(INVALID_SOCKET),recvCount(0),msgCount(0),clientNum(0){}
+	TcpServer(int maxClient):s_sock(INVALID_SOCKET),recvCount(0),msgCount(0),clientNum(0),_nMaxClient(maxClient) {}
 	virtual ~TcpServer() {  Close(); }
 	//创建套接字
 	int initSocket();
@@ -42,22 +42,36 @@ public:
 	int sendData(SOCKET, DataHeaderPtr&);
 	//关闭套接字
 	void closeSocket(SOCKET);
-	void Start(int);
+	template<typename T>
+	void Start(int nThread)
+	{
+		for (int n = 0; n < nThread; ++n) {
+			CELLServerPtr s = std::make_shared<T>(s_sock);
+			_servers.push_back(s);
+			//注册网络事件接收对象
+			s->setEventObj(this);
+			//启动消息处理线程
+			s->Start();
+		}
+		_thread.Start(nullptr,
+			[this](CELLThread* pThread) { onRun(pThread); }, nullptr);
+	}
 	//判断
 	bool isRun();
 	//响应消息
 	void time4msg();
+	virtual void onRun(CELLThread* pThread) {};
 	void Close();
 	void addClientToServer(CELLClientPtr);
 	//只被一个线程调用 线程安全
-	virtual void onJoin(CELLClientPtr &) { ++clientNum; }
+	virtual void onJoin() { ++clientNum; }
 	//可能会被多个线程调用 线程不安全
-	virtual void onLeave(CELLClientPtr &) { --clientNum; }
+	virtual void onLeave() { --clientNum; }
 	//可能会被多个线程调用 线程不安全
 	virtual inline void onNetMsg(CELLServer *,CELLClientPtr &,DataHeader *) { ++msgCount; }
-	virtual void onRecv(CELLClientPtr &) { ++recvCount; }
+	void onRecv() { ++recvCount; }
+	inline SOCKET getSock() { return s_sock; }
 protected:
-	void onRun(CELLThread*);
 	//客户端计数
 	std::atomic_int clientNum;
 	//recv函数计数
@@ -70,6 +84,7 @@ private:
 	//使用std::chrono的消息计时
 	CELLTimestamp _tTime;
 	CELLThread _thread;
+	int _nMaxClient = 10000;
 };
 
 #endif // !_SERVER_H_

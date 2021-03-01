@@ -6,31 +6,32 @@
 #include "CELLLog.h"
 #include "CELLMsgStream.hpp"
 #include "CELLConfig.hpp"
+#include "selectServer.h"
 
 //用户自定义server
-class MyServer :public TcpServer
+class MyServer :public SelectServer
 {
 public:
-	MyServer()
+	MyServer(int maxClient):SelectServer(maxClient)
 	{
 		_bSendBack = CELLConfig::getInstance().hasKey("-sendback");
 		_bSendFull = CELLConfig::getInstance().hasKey("-sendFull");
 		_bCheckMsgID = CELLConfig::getInstance().hasKey("-sendMsg");
 	}
 	//只被一个线程调用 线程安全
-	virtual void onJoin(CELLClientPtr& client)
+	virtual void onJoin()
 	{
-		TcpServer::onJoin(client);
+		TcpServer::onJoin();
 	}
 	//可能会被多个线程调用 线程不安全
-	virtual void onLeave(CELLClientPtr& client)
+	virtual void onLeave()
 	{
-		TcpServer::onLeave(client);
+		TcpServer::onLeave();
 	}
 	//可能会被多个线程调用 线程不安全
 	virtual void onNetMsg(CELLServer* pserver, CELLClientPtr& pclient, DataHeader* dh)
 	{
-		//TcpServer::onNetMsg(pserver, pclient, dh);
+		TcpServer::onNetMsg(pserver, pclient, dh);
 		switch (dh->cmd) {
 		case CMD_LOGIN: {
 			Login* login = static_cast<Login*>(dh);
@@ -88,13 +89,12 @@ public:
 		}
 		}
 	}
-	virtual void onRecv(CELLClientPtr&) { ++recvCount; }
+	virtual void onRecv() { TcpServer::onRecv(); }
 
 public:
 	bool _bSendBack;
 	bool _bSendFull;
 	bool _bCheckMsgID;
-
 };
 
 #endif

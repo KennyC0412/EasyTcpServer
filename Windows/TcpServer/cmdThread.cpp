@@ -1,6 +1,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include "pre.h"
-#include "messageHeader.h"
+#include "MsgHeader.h"
 #include "server.h"
 #include "CELLLog.h"
 
