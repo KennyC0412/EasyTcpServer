@@ -1,0 +1,11 @@
+objects=main.o server.o
+
+server : $(objects)
+	g++ -o server $(objects) -pthread -std=c++11 -g
+
+main.o : MsgHeader.h server.h
+server.o : server.h
+
+.PHONY : clean
+ clean :
+	rm $(objects)

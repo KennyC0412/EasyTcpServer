@@ -1,0 +1,16 @@
+#!/bin/bash
+cd `dirname $0`
+
+#server ip
+cmd='strIP=any'
+#server port
+cmd=$cmd' nPort=8888'
+#msg Thread
+cmd=$cmd' nThread=2'
+
+cmd=%cmd% "-sendFull"
+
+cmd=%cmd% "-sendMsg"
+./server $cmd
+
+read -p "..Press any key to exit.." val
