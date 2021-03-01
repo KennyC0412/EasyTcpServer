@@ -7,7 +7,6 @@
 
 class CELLServer;
 class INetEvent;
-using sendMsg2ClientPtr = std::shared_ptr<sendMsg2Client>;
 using CELLServerPtr = std::shared_ptr<CELLServer>;
 using LoginResultPtr = std::shared_ptr<LoginResult>;
 using DataHeaderPtr = std::shared_ptr<DataHeader>;
@@ -28,11 +27,10 @@ public:
 	void Start();
 	void sendTask(CELLClientPtr& ,DataHeaderPtr &);
 	size_t getClientCount() { return _clients.size() + clientsBuffer.size(); }
-	void readData();
-	void writeData();
 	void CheckTime();
 	void ClientLeave(CELLClientPtr&);
 	void clearClient();
+	virtual bool core() = 0;
 	inline int getMsg() {
 		int temp = msgCount;
 		msgCount = 0;
@@ -41,22 +39,19 @@ public:
 protected:
 	//处理网络消息
 	void onRun(CELLThread*);
-	std::atomic_int msgCount = 0;
+	int msgCount = 0;
+	bool client_change = true;
+	//正式客户队列
+	std::map<SOCKET, CELLClientPtr> _clients;
 private:
-	FDset _fdRead_back;
-	FDset _fdRead;
-	FDset _fdWrite;
 	CELLTimestamp _tTime;
 	CELLTaskServer _taskServer;
 	INetEvent* _pINetEvent;
 	SOCKET s_sock;
-	//正式客户队列
-	std::map<SOCKET, CELLClientPtr> _clients;
 	//缓冲客户队列
 	std::vector<CELLClientPtr> clientsBuffer{};
 	std::mutex _mutex;
 	CELLThread _thread;
-	bool client_change = true;
 };
 
 #endif

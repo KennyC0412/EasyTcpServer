@@ -20,6 +20,9 @@ void CELLServer::onRun(CELLThread *pThread)
 			std::lock_guard<std::mutex> lock(_mutex);
 			for (auto  c : clientsBuffer) {
 				_clients[c->getSock()] = c;
+				if (_pINetEvent) {
+					_pINetEvent->onJoin();
+				}
 			}
 			clientsBuffer.clear();
 			client_change = true;
@@ -30,48 +33,10 @@ void CELLServer::onRun(CELLThread *pThread)
 			oldTime = CELLTime::getNowInMilliSec();
 			continue;
 		}
-		_fdRead.zero();
-		//linux下的最大描述符
-		SOCKET maxSock = _clients.begin()->first;
-		if (client_change) {
-			client_change = false;
-			for (auto & iter : _clients) {
-				_fdRead.add(iter.first);
-				if (maxSock < iter.first) {
-					maxSock = iter.first;
-				}
-			}
-			_fdRead_back.copy(_fdRead);
-		}
-		else {
-			_fdRead.copy(_fdRead_back);
-		}
-		int ret;
-		bool NeedWrite = false;
-		_fdWrite.zero();
-		//检测需要写的客户端
-		for (auto& iter : _clients) {
-			if (iter.second->needWrite()) {
-				NeedWrite = true;
-				_fdWrite.add(iter.first);
-			}
-		}
-		timeval t{ 0,0 };
-		if (NeedWrite) {
-			ret = select(maxSock + 1, _fdRead.getSet(), _fdWrite.getSet(), nullptr, &t);
-		}
-		else {
-			ret = select(maxSock + 1, _fdRead.getSet(), nullptr, nullptr, &t);
-		}
-		if (ret < 0) {
-			CELLLog_Error("CellServer.OnRun.Select.Error");
+		if (!core()) {
 			pThread->Exit();
+			break;
 		}
-		else if (ret == 0) {
-			continue;
-		}	
-		readData();
-		writeData();
 		CheckTime();
 	}
 }
@@ -103,74 +68,13 @@ void CELLServer::CheckTime()
 void CELLServer::ClientLeave(CELLClientPtr& client)
 {
 	if (_pINetEvent) {
-		_pINetEvent->onLeave(client);
+		_pINetEvent->onLeave();
 	}
 	client_change = true;
 	client->destroyObject(client.get());
 }
 
-void CELLServer::writeData()
-{
-#ifdef _WIN32
-	fd_set* temp = _fdWrite.getSet();
-	for (size_t i = 0; i < temp->fd_count; ++i) {
-		auto iter = _clients.find(temp->fd_array[i]);
-		if (iter != _clients.end()) {
-			if (-1 == iter->second->sendData()) {
-				ClientLeave(iter->second);
-				_clients.erase(iter);
-			}
-		}
-	}
-#else
-	for (auto iter = _clients.begin(); iter != _clients.end();) {
-		if (iter->second->needWrite() && fdWrite.has(iter->first)){
-			if (-1 == iter->second->sendData()) {
-				ClientLeave(iter->second);
-				iter = _clients.erase(iter);
-			}
-			if (iter != _clients.end())
-				iter++;
-		}
-		else {
-			iter++;
-		}
-	}
-#endif
-}
 
-void CELLServer::readData()
-{
-#ifdef _WIN32
-	fd_set* temp = _fdRead.getSet();
-	for (size_t i = 0; i < temp->fd_count; i++) {
-		auto iter = _clients.find(temp->fd_array[i]);
-		if (iter != _clients.end()) {
-			if (-1 == recvData(iter->second)) {
-				ClientLeave(iter->second);
-				_clients.erase(iter);
-			}
-		}
-		else {
-			CELLLog_Error("End of iterator");
-		}
-	}
-#else
-	for (auto iter = _clients.begin(); iter != _clients.end();) {
-		if (fdRead.has(iter->first)) {
-			if (-1 == recvData(iter->second)) {
-				ClientLeave(iter->second);
-				iter = _clients.erase(iter);
-			}
-			if(iter != _clients.end())
-				iter++;
-		}
-		else {
-			iter++;
-		}
-	}
-#endif
-}
 
 int CELLServer::recvData(CELLClientPtr& client)
 {
@@ -180,11 +84,10 @@ int CELLServer::recvData(CELLClientPtr& client)
 		return -1;
 	}
 	//触发接受网络数据计数事件
-	_pINetEvent->onRecv(client);
+	_pINetEvent->onRecv();
 	//循环检查是否有消息待处理
 	while (client->hasMsg()) {
 		//处理消息
-		++msgCount;
 		onNetMsg(client, client->front_Msg());
 		//移除缓冲区头部消息
 		client->pop_front_Msg();
@@ -223,7 +126,6 @@ void CELLServer::Close()
 	_taskServer.Close();
 	_thread.Close();	
 	CELLLog_Info("CellServer Closed.");
-
 }
 
 void CELLServer::clearClient()

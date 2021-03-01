@@ -2,7 +2,7 @@
 #define _CELL_MSG_STREAM_H_
 
 #include "CELLStream.h"
-#include "messageHeader.h"
+#include "MsgHeader.h"
 
 //接收消息数据字节流
 class CELLRecvStream:public CELLStream

@@ -37,7 +37,7 @@ public:
 #ifdef _WIN32
 		FD_ZERO(_pfdset);
 #else
-		memset(_pfdset, 0, nfdSize);
+		memset(_pfdset, 0, _nfdSize);
 #endif
 	}
 

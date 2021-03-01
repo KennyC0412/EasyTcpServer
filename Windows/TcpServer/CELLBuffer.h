@@ -5,7 +5,7 @@
 #ifndef _CELL_BUFFER_H_
 #define _CELL_BUFFER_H_
 #include "pre.h"
-#include "messageHeader.h"
+#include "MsgHeader.h"
 
 class CELLBuffer 
 {
